@@ -111,8 +111,12 @@ export class LiveAIProvider extends MockAIProvider {
         502,
         `Ошибка ИИ-провайдера (${response.status}). Проверьте серверную конфигурацию.`,
       );
-    const data: any = await response.json();
-    return z.string().min(1).parse(data.choices?.[0]?.message?.content);
+    try {
+      const data: any = await response.json();
+      return z.string().min(1).parse(data.choices?.[0]?.message?.content);
+    } catch {
+      throw new HttpError(502, "Провайдер вернул некорректный ответ. Повторите запрос.");
+    }
   }
   async generateText(messages: ConversationMessage[]) {
     return this.request([
@@ -211,6 +215,8 @@ export function aiStatus() {
   const live = config("AI_MODE", "auto") !== "mock" && !!config("AI_API_KEY");
   return {
     mode: live ? "live" : "mock",
+    configured: live,
+    verified: false,
     text: live,
     vision: live && config("AI_SUPPORTS_VISION") === "true",
     documents: live && config("AI_SUPPORTS_DOCUMENTS") === "true",

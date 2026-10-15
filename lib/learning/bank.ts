@@ -5,7 +5,7 @@ const bank:Question[]=[];
 for(const t of TOPICS)for(let level=1;level<=3;level++)for(let n=1;n<=6;n++){
   let prompt='',answer=0,explanation='';
   if(t.id==='fractions'){
-    if(level===1){prompt=`Найдите 1/${n+1} от числа ${(n+1)*12}.`;answer=12;explanation=`Разделите целое ${(n+1)*12} на знаменатель ${n+1}: получится 12.`;}
+    if(level===1){answer=n+5;prompt=`Найдите 1/${n+1} от числа ${(n+1)*answer}.`;explanation=`Разделите целое ${(n+1)*answer} на знаменатель ${n+1}: получится ${answer}.`;}
     if(level===2){prompt=`Найдите ${n*5}% от числа 200.`;answer=n*10;explanation=`Один процент от 200 равен 2. Умножьте 2 на ${n*5}: ${answer}.`;}
     if(level===3){prompt=`Цена ${n*100} руб. сначала выросла на 20%, затем снизилась на 25%. Какова итоговая цена в рублях?`;answer=n*90;explanation=`Последовательные изменения перемножаются: ${n*100} × 1,2 × 0,75 = ${answer}. Проценты относятся к разным основаниям.`;}
   } else if(t.id==='equations'){

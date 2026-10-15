@@ -68,6 +68,9 @@ const QuizPage = dynamic(() =>
 const ClassesPage = dynamic(() =>
   import("./workspace/classes").then((m) => m.ClassesPage),
 );
+const LearningPage = dynamic(() =>
+  import("./learning").then((m) => m.LearningPage),
+);
 const tools: {
   type: ToolType;
   icon: any;
@@ -196,6 +199,8 @@ export function EduPilot() {
     content = <ChatPage id={path.split("/")[2]} />;
   else if (path.startsWith("/classes"))
     content = <ClassesPage id={path.split("/")[2]} />;
+  else if (path === "/learning" || path.startsWith("/learning/"))
+    content = <LearningPage key={path} section={path.split("/")[2]} />;
   else if (path === "/settings")
     content = (
       <SettingsPage
@@ -289,7 +294,7 @@ export function EduPilot() {
                   <span className="mode-badge">
                     <i />
                     {session.ai?.mode === "live"
-                      ? "ИИ подключён"
+                      ? "AI настроен"
                       : "Демо-режим ИИ"}
                   </span>
                   <button
@@ -405,6 +410,12 @@ export function GlassSidebar({
           },
         ]),
     { path: "/materials", label: "Мои материалы", icon: FolderOpen },
+    { path: "/learning", label: "Учебная траектория", icon: GraduationCap },
+    { path: "/learning/progress", label: "Мой прогресс", icon: Activity },
+    ...(user.role === "teacher" ? [
+      { path: "/learning/analytics", label: "Аналитика обучения", icon: SlidersHorizontal },
+      { path: "/learning/library", label: "Библиотека заданий", icon: BookOpen },
+    ] : []),
     {
       path: "/classes",
       label: view === "teacher" ? "Мои классы" : "Мои занятия",
@@ -459,7 +470,7 @@ export function GlassSidebar({
           <button
             title={l.label}
             key={i}
-            className={`nav-link ${path === l.path || (path.startsWith(l.path + "/") && l.path !== "/chat") ? "active" : ""} ${i === 0 ? "new-chat" : ""}`}
+            className={`nav-link ${path === l.path || (path.startsWith(l.path + "/") && l.path !== "/chat" && l.path !== "/learning") ? "active" : ""} ${i === 0 ? "new-chat" : ""}`}
             onClick={() => navigate(l.path)}
           >
             <l.icon size={18} strokeWidth={1.6} />
@@ -1177,7 +1188,7 @@ function SettingsPage({ background, setBackground, saveBackground }: any) {
             </li>
             <li>
               {ai?.text ? "✓" : "○"} Текстовый ИИ{" "}
-              {ai?.text ? "подключён" : "не подключён"}
+              {ai?.text ? "настроен, запрос не проверен" : "не подключён"}
             </li>
             <li>
               {ai?.vision ? "✓" : "○"} Обработка изображений{" "}
