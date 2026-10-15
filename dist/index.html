@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#050816" />
+  <meta name="description" content="Интерактивная сетка из частиц, реагирующая на движение курсора." />
+  <title>Интерактивное созвездие</title>
+  <style>
+    :root { --accent: #84ffe3; --accent-rgb: 132,255,227; --ink: #edf7ff; --muted: #9caac5; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100svh; overflow: hidden; background: #050816; color: var(--ink); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    canvas { position: fixed; inset: 0; width: 100%; height: 100%; cursor: crosshair; }
+    .grain { position: fixed; inset: 0; pointer-events: none; opacity: .055; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.9'/%3E%3C/svg%3E"); }
+    .top { position: fixed; inset: 0 0 auto; padding: 28px clamp(20px, 5vw, 74px); display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; pointer-events: none; }
+    .brand { max-width: 485px; }
+    .eyebrow { margin: 0 0 11px; color: var(--accent); font-size: 11px; font-weight: 750; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: clamp(36px, 5vw, 76px); line-height: .92; letter-spacing: -.055em; font-weight: 500; text-wrap: balance; }
+    .lead { max-width: 410px; margin: 17px 0 0; color: #b6c1d9; line-height: 1.45; font-size: 14px; }
+    .status { display: flex; align-items: center; gap: 9px; padding: 9px 12px; color: #c8d5ef; border: 1px solid rgba(177, 203, 255, .18); background: rgba(7, 13, 32, .52); backdrop-filter: blur(12px); border-radius: 999px; font-size: 12px; white-space: nowrap; }
+    .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 14px var(--accent); animation: blink 2s ease-in-out infinite; }
+    @keyframes blink { 50% { opacity: .35; transform: scale(.72); } }
+    .panel { position: fixed; right: clamp(18px, 4vw, 56px); bottom: 28px; width: min(322px, calc(100vw - 36px)); padding: 17px; background: rgba(8, 13, 33, .73); border: 1px solid rgba(193, 212, 255, .16); border-radius: 17px; backdrop-filter: blur(18px) saturate(130%); box-shadow: 0 20px 55px rgba(0,0,0,.24); }
+    .panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+    .panel h2 { margin: 0; font-size: 12px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+    .reading { color: var(--accent); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+    .row { display: grid; grid-template-columns: 80px 1fr 31px; align-items: center; gap: 10px; margin: 11px 0; color: #c3d0e9; font-size: 12px; }
+    output { color: #8d9ab4; text-align: right; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; }
+    input[type="range"] { width: 100%; margin: 0; appearance: none; height: 3px; border-radius: 3px; background: linear-gradient(90deg, var(--accent) 0 var(--fill, 50%), #34405c var(--fill, 50%) 100%); outline: none; }
+    input[type="range"]::-webkit-slider-thumb { appearance: none; width: 13px; height: 13px; border-radius: 50%; background: #f0fffc; border: 2px solid var(--accent); box-shadow: 0 0 12px rgba(var(--accent-rgb), .75); }
+    .palette { display: flex; gap: 9px; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(193,212,255,.11); }
+    .swatch { width: 24px; height: 24px; padding: 0; border-radius: 50%; border: 2px solid transparent; background: var(--color); box-shadow: 0 0 14px var(--color); cursor: pointer; transition: transform .2s, border-color .2s; }
+    .swatch:hover, .swatch.active { transform: scale(1.13); border-color: #fff; }
+    .help { position: fixed; left: clamp(20px, 5vw, 74px); bottom: 31px; color: #aebbd4; font-size: 12px; letter-spacing: .02em; }
+    kbd { display: inline-grid; min-width: 21px; height: 21px; place-items: center; margin: 0 4px; color: #e9f2ff; font: 11px ui-monospace, monospace; background: rgba(216,234,255,.11); border: 1px solid rgba(216,234,255,.17); border-radius: 5px; }
+    @media (max-width: 650px) { .top { padding-top: 22px; } .status { display: none; } h1 { font-size: 44px; } .lead { max-width: 295px; } .panel { bottom: 18px; } .help { display: none; } }
+  </style>
+</head>
+<body>
+  <canvas id="sky" aria-label="Интерактивная анимация частиц"></canvas>
+  <div class="grain"></div>
+  <header class="top">
+    <div class="brand">
+      <p class="eyebrow">Живая топология · 01</p>
+      <h1>Интерактивное<br>созвездие</h1>
+      <p class="lead">Проведите курсором по полю — частицы почувствуют ваше присутствие и соберутся в новую карту связей.</p>
+    </div>
+    <div class="status"><span class="pulse"></span><span id="state">связей: 0</span></div>
+  </header>
+  <aside class="panel" aria-label="Управление визуализацией">
+    <div class="panel-head"><h2>Параметры поля</h2><span class="reading" id="fps">60 FPS</span></div>
+    <label class="row"><span>Плотность</span><input id="density" type="range" min="35" max="150" value="86"><output>86</output></label>
+    <label class="row"><span>Дистанция</span><input id="reach" type="range" min="70" max="220" value="134"><output>134</output></label>
+    <label class="row"><span>Скорость</span><input id="speed" type="range" min="10" max="100" value="45"><output>45</output></label>
+    <div class="palette" aria-label="Выбор палитры">
+      <button class="swatch active" style="--color:#84ffe3" data-color="#84ffe3" data-rgb="132,255,227" aria-label="Мятная палитра"></button>
+      <button class="swatch" style="--color:#a590ff" data-color="#a590ff" data-rgb="165,144,255" aria-label="Фиолетовая палитра"></button>
+      <button class="swatch" style="--color:#ff9ecf" data-color="#ff9ecf" data-rgb="255,158,207" aria-label="Розовая палитра"></button>
+      <button class="swatch" style="--color:#ffcb6c" data-color="#ffcb6c" data-rgb="255,203,108" aria-label="Золотая палитра"></button>
+    </div>
+  </aside>
+  <div class="help">Наведите — притянуть · кликните — создать импульс · <kbd>R</kbd> сброс</div>
+  <script>
+    const canvas = document.querySelector('#sky'), ctx = canvas.getContext('2d');
+    const settings = { count: 86, reach: 134, speed: .45, color: '#84ffe3', rgb: '132,255,227' };
+    const pointer = { x: -9999, y: -9999, active: false, pulse: 0 };
+    let particles = [], width, height, dpr, last = performance.now(), frames = 0, fpsAt = last;
+    const rand = (a,b) => Math.random() * (b-a) + a;
+    class Particle {
+      constructor(seed = false) { this.x = rand(0,width); this.y = rand(0,height); this.vx = rand(-.38,.38); this.vy = rand(-.38,.38); this.size = rand(.9,2.5); this.seed = seed; }
+      update() { const s = settings.speed; let dx = pointer.x-this.x, dy = pointer.y-this.y, dist = Math.hypot(dx,dy); if (pointer.active && dist < 180) { const power = (180-dist)/180*.028; this.vx += dx/(dist||1)*power; this.vy += dy/(dist||1)*power; } if (pointer.pulse && dist < pointer.pulse) { const p = (pointer.pulse-dist)/pointer.pulse*.18; this.vx -= dx/(dist||1)*p; this.vy -= dy/(dist||1)*p; } this.vx *= .992; this.vy *= .992; this.x += this.vx*s; this.y += this.vy*s; if (this.x < -12) this.x=width+12; if (this.x > width+12) this.x=-12; if (this.y < -12) this.y=height+12; if (this.y > height+12) this.y=-12; }
+      draw() { ctx.beginPath(); ctx.fillStyle = settings.color; ctx.globalAlpha = .72; ctx.arc(this.x,this.y,this.size,0,Math.PI*2); ctx.fill(); }
+    }
+    function resize() { dpr = Math.min(devicePixelRatio, 2); width = innerWidth; height = innerHeight; canvas.width = width*dpr; canvas.height = height*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    function rebuild() { const old = particles; particles = Array.from({length:settings.count}, (_,i) => old[i] || new Particle()); }
+    function link() { let links=0; ctx.lineWidth = 1; for (let i=0; i<particles.length; i++) for (let j=i+1; j<particles.length; j++) { const a=particles[i],b=particles[j], dx=a.x-b.x,dy=a.y-b.y, distance=Math.hypot(dx,dy); if (distance < settings.reach) { const alpha = Math.pow(1-distance/settings.reach, 1.6)*.48; ctx.beginPath(); ctx.strokeStyle=`rgba(${settings.rgb},${alpha})`; ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.stroke(); links++; }} document.querySelector('#state').textContent = `связей: ${links}`; }
+    function drawGlow() { if (!pointer.active) return; const grad=ctx.createRadialGradient(pointer.x,pointer.y,0,pointer.x,pointer.y,220); grad.addColorStop(0,`rgba(${settings.rgb},.15)`); grad.addColorStop(1,`rgba(${settings.rgb},0)`); ctx.fillStyle=grad; ctx.fillRect(pointer.x-220,pointer.y-220,440,440); }
+    function loop(now) { ctx.clearRect(0,0,width,height); drawGlow(); particles.forEach(p=>p.update()); link(); particles.forEach(p=>p.draw()); if(pointer.pulse) pointer.pulse += 13; if(pointer.pulse > 520) pointer.pulse=0; frames++; if(now-fpsAt>750){ document.querySelector('#fps').textContent=`${Math.round(frames*1000/(now-fpsAt))} FPS`; frames=0;fpsAt=now;} requestAnimationFrame(loop); }
+    document.querySelectorAll('input[type=range]').forEach(el=>{ const setFill=()=>{ const p=(el.value-el.min)/(el.max-el.min)*100; el.style.setProperty('--fill',p+'%'); el.nextElementSibling.value=el.value; }; setFill(); el.addEventListener('input',()=>{ setFill(); if(el.id==='density'){settings.count=+el.value; rebuild();} else if(el.id==='reach') settings.reach=+el.value; else settings.speed=+el.value/100; }); });
+    document.querySelectorAll('.swatch').forEach(btn=>btn.addEventListener('click',()=>{ document.querySelector('.swatch.active').classList.remove('active'); btn.classList.add('active'); settings.color=btn.dataset.color;settings.rgb=btn.dataset.rgb;document.documentElement.style.setProperty('--accent',settings.color);document.documentElement.style.setProperty('--accent-rgb',settings.rgb); }));
+    addEventListener('pointermove',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.active=true;}); addEventListener('pointerleave',()=>pointer.active=false); addEventListener('pointerdown',e=>{pointer.x=e.clientX;pointer.y=e.clientY;pointer.pulse=8;}); addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r') rebuild();}); addEventListener('resize',resize); resize(); rebuild(); requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
