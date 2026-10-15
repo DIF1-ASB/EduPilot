@@ -708,5 +708,69 @@
     "method": "POST",
     "area": "assist",
     "status": 200
+  },
+  {
+    "scenario": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+    "method": "POST",
+    "area": "sessions",
+    "status": 201,
+    "count": 0,
+    "level": 1,
+    "mastery": 0.5,
+    "completed": false,
+    "questionId": "equations-1-1"
+  },
+  {
+    "scenario": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+    "method": "POST",
+    "area": "sessions",
+    "status": 201,
+    "count": 0,
+    "level": 1,
+    "mastery": 0.5,
+    "completed": false,
+    "questionId": "equations-1-1"
+  },
+  {
+    "scenario": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+    "method": "POST",
+    "area": "sessions",
+    "status": 200,
+    "count": 1,
+    "level": 1,
+    "mastery": 0.7142857142857143,
+    "completed": false,
+    "questionId": "equations-1-2",
+    "feedback": {
+      "correct": true,
+      "answer": "3"
+    }
+  },
+  {
+    "scenario": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+    "method": "POST",
+    "area": "sessions",
+    "status": 200,
+    "count": 1,
+    "level": 1,
+    "mastery": 0.7142857142857143,
+    "completed": false,
+    "questionId": "equations-1-2",
+    "feedback": {
+      "correct": true,
+      "answer": "3"
+    }
+  },
+  {
+    "scenario": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+    "method": "GET",
+    "area": "progress",
+    "status": 200,
+    "metrics": {
+      "total": 17,
+      "correct": 17,
+      "accuracy": 1,
+      "completedTrainings": 1
+    }
   }
 ]

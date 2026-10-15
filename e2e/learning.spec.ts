@@ -21,6 +21,7 @@ test('ученик проходит 5 + 10 заданий, видит разбо
   await expect(page.getByTestId('learning-question')).toBeVisible();
   await expect(page.getByTestId('learning-feedback')).toHaveCount(0);
   await page.screenshot({path:'../work/learning-training.png',fullPage:true});
+  await page.locator('.learning-question-card').screenshot({path:'../work/learning-question.png'});
   const firstPrompt = await page.getByTestId('learning-question').innerText();
   await page.getByLabel('Ваш ответ', { exact: true }).fill('0');
   await page.getByRole('button', { name: 'Проверить ответ', exact: true }).click();
@@ -44,6 +45,8 @@ test('ученик проходит 5 + 10 заданий, видит разбо
   await expect(page.getByTestId('learning-accuracy')).toContainText('0 / 15');
   await expect(page.getByRole('heading', { name: 'Журнал решений', exact: true })).toBeVisible();
   await page.screenshot({path:'../work/learning-progress.png',fullPage:true});
+  await page.locator('.learning-stats').screenshot({path:'../work/learning-metrics.png'});
+  await page.locator('.learning-timeline li').first().screenshot({path:'../work/learning-decision.png'});
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByTestId('learning-accuracy')).toBeVisible();
   await page.screenshot({path:'../work/learning-mobile.png',fullPage:true});
@@ -73,4 +76,13 @@ test('учитель проверяет библиотеку черновико�
   await editor.getByRole('button', { name: 'Сохранить правки в черновик', exact: true }).click();
   await expect(editor.getByTestId('learning-task-status')).toHaveText('Черновик');
   await page.screenshot({path:'../work/learning-library.png',fullPage:true});
+});
+
+test('тренировка доступна с reduced motion и выключенными частицами',async({page})=>{
+  await register(page,'student');await page.emulateMedia({reducedMotion:'reduce'});
+  expect((await page.request.patch('/api/settings',{headers:{Origin:'http://127.0.0.1:3000'},data:{preferences:{background:{density:0,distance:140,speed:0,color:'#64f5da',animated:false}}}})).status()).toBe(200);
+  await page.goto('/learning');await page.getByRole('button',{name:'Начать тренировку',exact:true}).click();
+  await expect(page.getByTestId('learning-question')).toBeVisible();await page.getByLabel('Ваш ответ',{exact:true}).fill('0');await page.getByRole('button',{name:'Проверить ответ',exact:true}).click();await expect(page.getByTestId('learning-feedback')).toBeVisible();
+  expect(await page.evaluate(()=>matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
+  const session=await(await page.request.get('/api/session')).json();expect(session.user.settings.preferences.background.animated).toBe(false);expect(session.user.settings.preferences.background.density).toBe(0);
 });

@@ -14,7 +14,7 @@
     "postinstall": "prisma generate",
     "test": "vitest run",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "next typegen && tsc --noEmit",
     "sites:dev": "node scripts/run-framework.mjs dev",
     "sites:build": "node scripts/run-framework.mjs build",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",

@@ -1,4 +1,11 @@
 import { test, expect } from "@playwright/test";
+import { BANK } from '../lib/learning/bank';
+test('Worker/D1: автономная тренировка и канонический журнал',async({request})=>{
+  test.skip(!process.env.HOSTED_PREVIEW,'Отдельная локальная D1-база');const base=process.env.EDUPILOT_TEST_URL||'http://127.0.0.1:4173';const headers={Origin:base};
+  const r=await request.post(base+'/api/auth/register',{headers,data:{firstName:'Демо',lastName:'Тренажёр',email:`learning-worker-${Date.now()}@test.example`,password:'ExamplePass789!',confirmPassword:'ExamplePass789!',role:'teacher'}});expect(r.status(),await r.text()).toBe(201);
+  const create=await request.post(base+'/api/learning/sessions',{headers,data:{topic:'fractions'}});expect(create.status(),await create.text()).toBe(201);const s=await create.json();expect(s.turn.question.answer).toBeUndefined();const q=BANK.find(q=>q.id===s.turn.question.id)!;const data={turnId:s.turn.id,requestId:'worker-idempotent',answer:q.answer};const answer=await request.post(base+`/api/learning/sessions/${s.session.id}/answer`,{headers,data});expect(answer.status(),await answer.text()).toBe(200);expect((await answer.json()).count).toBe(1);
+  expect((await request.post(base+`/api/learning/sessions/${s.session.id}/answer`,{headers,data})).status()).toBe(200);const p=await request.get(base+'/api/learning/progress');expect(p.status(),await p.text()).toBe(200);const progress=await p.json();expect(progress.metrics.total).toBe(1);expect(progress.attempts[0].masteryBefore).toBe(.5);expect(progress.attempts[0].masteryAfter).toBeCloseTo(2/3);expect(progress.attempts[0].evidenceJson.priorTopicAttempts).toBe(0);
+});
 test("D1, серверная авторизация, PDF и приватные файлы в Worker", async ({
   request,
 }) => {

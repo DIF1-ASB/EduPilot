@@ -1,13 +1,13 @@
 {
   "kind": "TECHNICAL_TESTS_NOT_PEDAGOGICAL_STUDY",
-  "generatedAt": "2026-10-15T14:58:18.663Z",
+  "generatedAt": "2026-10-15T15:29:22.183Z",
   "node": "v20.20.1",
-  "commit": "dd6988a5548b758e38027b9ca1d9346837af92f4",
+  "commit": "503569d76743e85ef2cfc8df51dbdba11959aeb0",
   "workingTreeDirty": true,
-  "total": 81,
-  "passed": 81,
+  "total": 84,
+  "passed": 84,
   "failed": 0,
-  "predefinedLearningScenarios": 42,
+  "predefinedLearningScenarios": 44,
   "cases": [
     {
       "id": "L21",
@@ -25,7 +25,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 5.909599999999955,
+      "durationMs": 3.906300000000101,
       "diagnostics": []
     },
     {
@@ -49,7 +49,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 27.708999999999833,
+      "durationMs": 23.838400000000092,
       "diagnostics": []
     },
     {
@@ -68,7 +68,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 13.109999999999673,
+      "durationMs": 12.638600000000224,
       "diagnostics": []
     },
     {
@@ -91,7 +91,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 49.42309999999998,
+      "durationMs": 65.02440000000024,
       "diagnostics": []
     },
     {
@@ -114,7 +114,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 17.27089999999953,
+      "durationMs": 17.46899999999914,
       "diagnostics": []
     },
     {
@@ -133,7 +133,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 12.148400000000038,
+      "durationMs": 11.363999999999578,
       "diagnostics": []
     },
     {
@@ -159,7 +159,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 26.98199999999997,
+      "durationMs": 27.506000000000313,
       "diagnostics": []
     },
     {
@@ -205,7 +205,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 73.4425999999994,
+      "durationMs": 70.14909999999963,
       "diagnostics": []
     },
     {
@@ -240,7 +240,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 39.616399999999885,
+      "durationMs": 35.82970000000023,
       "diagnostics": []
     },
     {
@@ -367,7 +367,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 240.8654000000006,
+      "durationMs": 247.95740000000023,
       "diagnostics": []
     },
     {
@@ -386,7 +386,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 9.452900000000227,
+      "durationMs": 14.033400000000256,
       "diagnostics": []
     },
     {
@@ -405,7 +405,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 13.091599999999744,
+      "durationMs": 9.581099999999424,
       "diagnostics": []
     },
     {
@@ -452,7 +452,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 82.1289999999999,
+      "durationMs": 78.08650000000034,
       "diagnostics": []
     },
     {
@@ -482,7 +482,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 33.943199999999706,
+      "durationMs": 31.69170000000031,
       "diagnostics": []
     },
     {
@@ -501,7 +501,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 24.402799999999843,
+      "durationMs": 41.201600000000326,
       "diagnostics": []
     },
     {
@@ -524,7 +524,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 34.06850000000031,
+      "durationMs": 28.95139999999992,
       "diagnostics": []
     },
     {
@@ -586,7 +586,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 96.82549999999992,
+      "durationMs": 110.61380000000008,
       "diagnostics": []
     },
     {
@@ -610,7 +610,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 45.19869999999992,
+      "durationMs": 30.13470000000052,
       "diagnostics": []
     },
     {
@@ -903,7 +903,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 652.9739,
+      "durationMs": 535.0515000000005,
       "diagnostics": []
     },
     {
@@ -932,7 +932,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 773.9465999999993,
+      "durationMs": 671.3964000000005,
       "diagnostics": []
     },
     {
@@ -951,7 +951,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 28.575200000000223,
+      "durationMs": 17.365700000000288,
       "diagnostics": []
     },
     {
@@ -980,7 +980,97 @@
         }
       ],
       "status": "passed",
-      "durationMs": 67.54089999999997,
+      "durationMs": 64.35379999999986,
+      "diagnostics": []
+    },
+    {
+      "id": "L43",
+      "source": "tests/learning-api.test.ts",
+      "initial": "Изолированная SQLite, все миграции, три тестовые учётные записи; сценарии выполняются в объявленном порядке.",
+      "actions": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+      "expected": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+      "actual": [
+        {
+          "scenario": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+          "method": "POST",
+          "area": "sessions",
+          "status": 201,
+          "count": 0,
+          "level": 1,
+          "mastery": 0.5,
+          "completed": false,
+          "questionId": "equations-1-1"
+        },
+        {
+          "scenario": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+          "method": "POST",
+          "area": "sessions",
+          "status": 201,
+          "count": 0,
+          "level": 1,
+          "mastery": 0.5,
+          "completed": false,
+          "questionId": "equations-1-1"
+        },
+        {
+          "scenario": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+          "method": "POST",
+          "area": "sessions",
+          "status": 200,
+          "count": 1,
+          "level": 1,
+          "mastery": 0.7142857142857143,
+          "completed": false,
+          "questionId": "equations-1-2",
+          "feedback": {
+            "correct": true,
+            "answer": "3"
+          }
+        },
+        {
+          "scenario": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+          "method": "POST",
+          "area": "sessions",
+          "status": 200,
+          "count": 1,
+          "level": 1,
+          "mastery": 0.7142857142857143,
+          "completed": false,
+          "questionId": "equations-1-2",
+          "feedback": {
+            "correct": true,
+            "answer": "3"
+          }
+        },
+        {
+          "scenario": "L43 ответы в двух сессиях образуют единый согласованный журнал mastery",
+          "method": "GET",
+          "area": "progress",
+          "status": 200,
+          "metrics": {
+            "total": 17,
+            "correct": 17,
+            "accuracy": 1,
+            "completedTrainings": 1
+          }
+        }
+      ],
+      "status": "passed",
+      "durationMs": 149.0583000000006,
+      "diagnostics": []
+    },
+    {
+      "id": "аналитика150учеников не превышает100 bind-параметров D1",
+      "source": "tests/learning-d1.test.ts",
+      "initial": "Литералы и фиксированные входы, описанные в исходном тесте до реализации.",
+      "actions": "аналитика150учеников не превышает100 bind-параметров D1",
+      "expected": "аналитика150учеников не превышает100 bind-параметров D1",
+      "actual": {
+        "assertions": "passed",
+        "diagnostics": []
+      },
+      "status": "passed",
+      "durationMs": 84.2097,
       "diagnostics": []
     },
     {
@@ -994,7 +1084,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.6147999999999456,
+      "durationMs": 1.655300000000011,
       "diagnostics": []
     },
     {
@@ -1008,7 +1098,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.2053000000000793,
+      "durationMs": 0.1976999999999407,
       "diagnostics": []
     },
     {
@@ -1022,7 +1112,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.23680000000001655,
+      "durationMs": 0.11549999999999727,
       "diagnostics": []
     },
     {
@@ -1036,7 +1126,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.11749999999994998,
+      "durationMs": 0.21119999999996253,
       "diagnostics": []
     },
     {
@@ -1050,7 +1140,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.2644999999999982,
+      "durationMs": 0.2098999999999478,
       "diagnostics": []
     },
     {
@@ -1064,7 +1154,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.1793999999999869,
+      "durationMs": 0.15480000000002292,
       "diagnostics": []
     },
     {
@@ -1078,7 +1168,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.18240000000002965,
+      "durationMs": 0.13619999999991705,
       "diagnostics": []
     },
     {
@@ -1092,7 +1182,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.28139999999996235,
+      "durationMs": 0.4189000000000078,
       "diagnostics": []
     },
     {
@@ -1106,7 +1196,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.3147000000000162,
+      "durationMs": 1.8935999999999922,
       "diagnostics": []
     },
     {
@@ -1120,7 +1210,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.266399999999976,
+      "durationMs": 0.35540000000003147,
       "diagnostics": []
     },
     {
@@ -1134,7 +1224,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.14060000000006312,
+      "durationMs": 0.2420000000000755,
       "diagnostics": []
     },
     {
@@ -1148,7 +1238,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.11230000000000473,
+      "durationMs": 0.10989999999992506,
       "diagnostics": []
     },
     {
@@ -1162,7 +1252,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.20439999999996417,
+      "durationMs": 0.17360000000007858,
       "diagnostics": []
     },
     {
@@ -1176,7 +1266,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.3893999999999096,
+      "durationMs": 0.3890999999999849,
       "diagnostics": []
     },
     {
@@ -1190,7 +1280,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.3852000000000544,
+      "durationMs": 0.30380000000002383,
       "diagnostics": []
     },
     {
@@ -1204,7 +1294,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.13839999999993324,
+      "durationMs": 0.14960000000007767,
       "diagnostics": []
     },
     {
@@ -1218,7 +1308,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 14.507399999999961,
+      "durationMs": 16.238700000000108,
       "diagnostics": []
     },
     {
@@ -1232,7 +1322,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.1047000000000935,
+      "durationMs": 1.251800000000003,
       "diagnostics": []
     },
     {
@@ -1246,7 +1336,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.559099999999944,
+      "durationMs": 0.741800000000012,
       "diagnostics": []
     },
     {
@@ -1260,7 +1350,21 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.5071000000000367,
+      "durationMs": 0.45470000000000255,
+      "diagnostics": []
+    },
+    {
+      "id": "Правила адаптации — заранее заданные сценарии долгая история повторов не меняет целевой уровень диагностики",
+      "source": "tests/learning-engine.test.ts",
+      "initial": "Литералы и фиксированные входы, описанные в исходном тесте до реализации.",
+      "actions": "Правила адаптации — заранее заданные сценарии долгая история повторов не меняет целевой уровень диагностики",
+      "expected": "долгая история повторов не меняет целевой уровень диагностики",
+      "actual": {
+        "assertions": "passed",
+        "diagnostics": []
+      },
+      "status": "passed",
+      "durationMs": 0.5380999999999858,
       "diagnostics": []
     },
     {
@@ -1274,7 +1378,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 4.356400000000008,
+      "durationMs": 6.536500000000046,
       "diagnostics": []
     },
     {
@@ -1288,7 +1392,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.2775000000000318,
+      "durationMs": 1.4126999999999725,
       "diagnostics": []
     },
     {
@@ -1302,7 +1406,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 2566.148,
+      "durationMs": 2212.3558000000003,
       "diagnostics": []
     },
     {
@@ -1316,7 +1420,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 92.89330000000064,
+      "durationMs": 114.65509999999995,
       "diagnostics": []
     },
     {
@@ -1330,7 +1434,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 2081.1930999999995,
+      "durationMs": 1884.5304999999998,
       "diagnostics": []
     },
     {
@@ -1344,7 +1448,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 51.317299999999705,
+      "durationMs": 62.878999999999905,
       "diagnostics": []
     },
     {
@@ -1358,7 +1462,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 47.7470000000003,
+      "durationMs": 73.29439999999977,
       "diagnostics": []
     },
     {
@@ -1372,7 +1476,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 752.6270999999997,
+      "durationMs": 507.4827000000005,
       "diagnostics": []
     },
     {
@@ -1386,7 +1490,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 78.8719000000001,
+      "durationMs": 102.4400999999998,
       "diagnostics": []
     },
     {
@@ -1400,7 +1504,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 23.574100000000726,
+      "durationMs": 21.233900000000176,
       "diagnostics": []
     },
     {
@@ -1414,7 +1518,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 104.92100000000028,
+      "durationMs": 107.72050000000036,
       "diagnostics": []
     },
     {
@@ -1428,7 +1532,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 56.53350000000046,
+      "durationMs": 47.765300000000025,
       "diagnostics": []
     },
     {
@@ -1442,7 +1546,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 53.8769999999995,
+      "durationMs": 80.54899999999998,
       "diagnostics": []
     },
     {
@@ -1456,7 +1560,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 580.5711999999994,
+      "durationMs": 562.3914000000004,
       "diagnostics": []
     },
     {
@@ -1470,7 +1574,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 185.92070000000058,
+      "durationMs": 109.94599999999991,
       "diagnostics": []
     },
     {
@@ -1484,7 +1588,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 716.0798999999988,
+      "durationMs": 527.3978999999999,
       "diagnostics": []
     },
     {
@@ -1498,7 +1602,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 79.5992,
+      "durationMs": 105.61649999999997,
       "diagnostics": []
     },
     {
@@ -1512,7 +1616,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.8626000000000431,
+      "durationMs": 2.677500000000009,
       "diagnostics": []
     },
     {
@@ -1526,7 +1630,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 11.586900000000014,
+      "durationMs": 15.400899999999979,
       "diagnostics": []
     },
     {
@@ -1540,7 +1644,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 73.84570000000008,
+      "durationMs": 96.21040000000005,
       "diagnostics": []
     },
     {
@@ -1554,7 +1658,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 9.975500000000011,
+      "durationMs": 10.082999999999856,
       "diagnostics": []
     },
     {
@@ -1568,7 +1672,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 17.14549999999997,
+      "durationMs": 15.457799999999907,
       "diagnostics": []
     },
     {
@@ -1582,7 +1686,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.7666999999999007,
+      "durationMs": 1.415000000000191,
       "diagnostics": []
     },
     {
@@ -1596,7 +1700,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 5.360200000000077,
+      "durationMs": 2.052699999999959,
       "diagnostics": []
     },
     {
@@ -1610,7 +1714,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.5657999999999674,
+      "durationMs": 1.0828000000001339,
       "diagnostics": []
     },
     {
@@ -1624,7 +1728,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.2600999999999658,
+      "durationMs": 1.169800000000123,
       "diagnostics": []
     },
     {
@@ -1638,7 +1742,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.30530000000010205,
+      "durationMs": 0.330600000000004,
       "diagnostics": []
     },
     {
@@ -1652,7 +1756,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.3744000000000369,
+      "durationMs": 0.24939999999992324,
       "diagnostics": []
     },
     {
@@ -1666,7 +1770,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.3344999999999345,
+      "durationMs": 0.1813999999999396,
       "diagnostics": []
     },
     {
@@ -1680,7 +1784,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.6000000000000227,
+      "durationMs": 0.4068999999999505,
       "diagnostics": []
     },
     {
@@ -1694,7 +1798,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.3120000000000118,
+      "durationMs": 0.2156999999999698,
       "diagnostics": []
     },
     {
@@ -1708,7 +1812,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.33140000000003056,
+      "durationMs": 0.3143999999999778,
       "diagnostics": []
     },
     {
@@ -1722,7 +1826,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.23540000000002692,
+      "durationMs": 0.22649999999998727,
       "diagnostics": []
     },
     {
@@ -1736,7 +1840,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.2680000000000291,
+      "durationMs": 0.25549999999998363,
       "diagnostics": []
     },
     {
@@ -1750,7 +1854,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.28350000000000364,
+      "durationMs": 0.25289999999995416,
       "diagnostics": []
     },
     {
@@ -1764,7 +1868,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.28160000000002583,
+      "durationMs": 0.29310000000009495,
       "diagnostics": []
     },
     {
@@ -1778,7 +1882,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.2585000000000264,
+      "durationMs": 0.2746999999999389,
       "diagnostics": []
     },
     {
@@ -1792,7 +1896,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.31740000000002055,
+      "durationMs": 0.4717000000000553,
       "diagnostics": []
     },
     {
@@ -1806,7 +1910,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.6331000000000131,
+      "durationMs": 0.7751999999998134,
       "diagnostics": []
     }
   ]
