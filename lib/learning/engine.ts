@@ -22,8 +22,9 @@ export function selectQuestion(pool:Question[],level:number,history:{questionId:
   const available=pool.filter(q=>!recent.has(q.id)); const candidates=available.length?available:pool;
   const target=mode==='fixed'?[1,2,3][sequence%3]:level;
   return [...candidates].sort((a,b)=>{
-    const score=(q:Question)=>Math.abs(q.level-target)*1000+(counts.get(q.id)||0)*100-(mode==='adaptive'?q.knowledgeTags.filter(t=>(errors.get(t)||0)>=2).length*10:0);
-    return score(a)-score(b)||a.id.localeCompare(b.id);
+    const repeats=(q:Question)=>counts.get(q.id)||0;
+    const matches=(q:Question)=>mode==='adaptive'?q.knowledgeTags.filter(t=>(errors.get(t)||0)>=2).length:0;
+    return Math.abs(a.level-target)-Math.abs(b.level-target)||repeats(a)-repeats(b)||matches(b)-matches(a)||a.id.localeCompare(b.id);
   })[0];
 }
 export function summarize(history:Evidence[],mode='adaptive',c=DEFAULT_CONFIG) {

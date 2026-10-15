@@ -218,10 +218,10 @@ model TrainingAttempt {
   durationMs Int
   levelBefore Int
   levelAfter Int
-  masteryBefore Float
-  masteryAfter Float
+  observedMasteryBefore Float @map("masteryBefore")
+  observedMasteryAfter Float @map("masteryAfter")
   reason String
-  evidenceJson Json
+  observationJson Json @map("evidenceJson")
   errorTagsJson Json
   createdAt DateTime @default(now())
   turn TrainingTurn @relation(fields:[turnId],references:[id],onDelete:Cascade)
