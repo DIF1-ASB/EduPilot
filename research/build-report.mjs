@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 const t=JSON.parse(fs.readFileSync('research/results/technical.json','utf8'));
 const s=JSON.parse(fs.readFileSync('research/results/simulation.json','utf8'));
+const browserReports=['e2e-next','e2e-worker'].filter(name=>fs.existsSync(`research/results/${name}.json`)).map(name=>({name,...JSON.parse(fs.readFileSync(`research/results/${name}.json`,'utf8')).stats}));
 const labels={'stable-capable':'Устойчивый','recurring-errors':'Повторные ошибки','improving':'Рост вероятности'};
 const rows=s.comparisons.map(r=>`| ${labels[r.profileId]} | ${r.mode} | ${r.accuracy.numerator}/${r.accuracy.denominator} | ${r.practiceLevelChanges} | ${r.repeats} | ${r.masteredRuns}/4 |`).join('\n');
 const text=`# Результаты технических экспериментов EduPilot
@@ -32,6 +33,10 @@ ${rows}
 ## Дополнительная проверка и ограничения
 
 Production Next build и typecheck проверяются отдельно. E2E ученика/учителя, выключенный фон/reduced motion и регрессия исходного рабочего пространства выполняются в Edge на локальном сервере. Отдельный Worker/D1-прогон фиксируется в итоговом дополнении, не включён в Vitest-счётчик.
+
+Машинные браузерные отчёты текущего прогона: ${browserReports.map(r=>`${r.name}: успешно ${r.expected}, неожиданных ошибок ${r.unexpected}, пропущено ${r.skipped}, нестабильных ${r.flaky}`).join('; ')}. JSON находятся рядом с техническими результатами. Next production build, tsc после next typegen и Vinext Worker build завершились без ошибок. На отдельной локальной D1 подтверждены учебный журнал/idempotence и прежние авторизация/экспорт/приватные файлы. После облачной сборки Next-типы восстанавливает npm run typecheck; не запускать генерацию типов одновременно со сборкой. Полная production-нагрузка не измерялась.
+
+При итоговом контроле агрегации дополнительная регрессия обнаружила смешение повторов разных учеников. Теперь тематический mastery класса — среднее личных показателей по теме, без учеников без данных. Тест сначала показал0.5714 вместо ожидаемого0.5, затем прошёл после исправления. Это исправление не меняет формулу личного mastery или симуляционные траектории.
 
 Статья: A4, поля2.5см, Times New Roman14, одинарный интервал, одна таблица,7 научных ссылок,3 из2023–2025. Из-за отсутствия LibreOffice канонический render_docx.py завершился ошибкой среды; альтернативная конвертация Microsoft Word дала4страницы, все просмотрены. Презентация11слайдов проходит пакетную/геометрическую проверку и first-party import, каждый слайд просмотрен; это не подтверждает устное выступление.
 

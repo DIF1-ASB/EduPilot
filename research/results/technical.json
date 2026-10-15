@@ -1,11 +1,11 @@
 {
   "kind": "TECHNICAL_TESTS_NOT_PEDAGOGICAL_STUDY",
-  "generatedAt": "2026-10-15T15:29:22.183Z",
+  "generatedAt": "2026-10-15T15:36:31.282Z",
   "node": "v20.20.1",
-  "commit": "503569d76743e85ef2cfc8df51dbdba11959aeb0",
+  "commit": "2c19f2a75dc45f9ed0f2f9efb0d704b7fc1de103",
   "workingTreeDirty": true,
-  "total": 84,
-  "passed": 84,
+  "total": 85,
+  "passed": 85,
   "failed": 0,
   "predefinedLearningScenarios": 44,
   "cases": [
@@ -25,7 +25,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 3.906300000000101,
+      "durationMs": 4.003200000000106,
       "diagnostics": []
     },
     {
@@ -49,7 +49,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 23.838400000000092,
+      "durationMs": 19.956700000000183,
       "diagnostics": []
     },
     {
@@ -68,7 +68,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 12.638600000000224,
+      "durationMs": 9.97649999999976,
       "diagnostics": []
     },
     {
@@ -91,7 +91,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 65.02440000000024,
+      "durationMs": 42.38999999999987,
       "diagnostics": []
     },
     {
@@ -114,7 +114,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 17.46899999999914,
+      "durationMs": 12.285299999999552,
       "diagnostics": []
     },
     {
@@ -133,7 +133,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 11.363999999999578,
+      "durationMs": 11.6591999999996,
       "diagnostics": []
     },
     {
@@ -159,7 +159,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 27.506000000000313,
+      "durationMs": 22.676899999999932,
       "diagnostics": []
     },
     {
@@ -205,7 +205,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 70.14909999999963,
+      "durationMs": 54.01669999999967,
       "diagnostics": []
     },
     {
@@ -240,7 +240,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 35.82970000000023,
+      "durationMs": 23.366700000000037,
       "diagnostics": []
     },
     {
@@ -367,7 +367,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 247.95740000000023,
+      "durationMs": 168.81500000000005,
       "diagnostics": []
     },
     {
@@ -386,7 +386,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 14.033400000000256,
+      "durationMs": 10.63229999999976,
       "diagnostics": []
     },
     {
@@ -405,7 +405,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 9.581099999999424,
+      "durationMs": 9.4391999999998,
       "diagnostics": []
     },
     {
@@ -452,7 +452,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 78.08650000000034,
+      "durationMs": 67.7873999999997,
       "diagnostics": []
     },
     {
@@ -482,7 +482,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 31.69170000000031,
+      "durationMs": 26.540500000000065,
       "diagnostics": []
     },
     {
@@ -501,7 +501,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 41.201600000000326,
+      "durationMs": 17.955000000000382,
       "diagnostics": []
     },
     {
@@ -524,7 +524,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 28.95139999999992,
+      "durationMs": 27.08699999999999,
       "diagnostics": []
     },
     {
@@ -586,7 +586,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 110.61380000000008,
+      "durationMs": 74.62829999999985,
       "diagnostics": []
     },
     {
@@ -610,7 +610,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 30.13470000000052,
+      "durationMs": 25.062000000000353,
       "diagnostics": []
     },
     {
@@ -903,7 +903,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 535.0515000000005,
+      "durationMs": 418.43319999999994,
       "diagnostics": []
     },
     {
@@ -932,7 +932,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 671.3964000000005,
+      "durationMs": 581.1109999999999,
       "diagnostics": []
     },
     {
@@ -951,7 +951,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 17.365700000000288,
+      "durationMs": 15.900099999999838,
       "diagnostics": []
     },
     {
@@ -980,7 +980,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 64.35379999999986,
+      "durationMs": 38.26270000000022,
       "diagnostics": []
     },
     {
@@ -1056,7 +1056,7 @@
         }
       ],
       "status": "passed",
-      "durationMs": 149.0583000000006,
+      "durationMs": 118.60109999999986,
       "diagnostics": []
     },
     {
@@ -1070,7 +1070,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 84.2097,
+      "durationMs": 79.00990000000002,
       "diagnostics": []
     },
     {
@@ -1084,7 +1084,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.655300000000011,
+      "durationMs": 1.5938999999999623,
       "diagnostics": []
     },
     {
@@ -1098,7 +1098,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.1976999999999407,
+      "durationMs": 0.2016999999999598,
       "diagnostics": []
     },
     {
@@ -1112,7 +1112,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.11549999999999727,
+      "durationMs": 0.11969999999996617,
       "diagnostics": []
     },
     {
@@ -1126,7 +1126,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.21119999999996253,
+      "durationMs": 0.1786999999999921,
       "diagnostics": []
     },
     {
@@ -1140,7 +1140,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.2098999999999478,
+      "durationMs": 0.18990000000002283,
       "diagnostics": []
     },
     {
@@ -1154,7 +1154,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.15480000000002292,
+      "durationMs": 0.1331000000000131,
       "diagnostics": []
     },
     {
@@ -1168,7 +1168,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.13619999999991705,
+      "durationMs": 0.11269999999996116,
       "diagnostics": []
     },
     {
@@ -1182,7 +1182,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.4189000000000078,
+      "durationMs": 0.23149999999998272,
       "diagnostics": []
     },
     {
@@ -1196,7 +1196,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.8935999999999922,
+      "durationMs": 0.28910000000007585,
       "diagnostics": []
     },
     {
@@ -1210,7 +1210,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.35540000000003147,
+      "durationMs": 0.3324999999999818,
       "diagnostics": []
     },
     {
@@ -1224,7 +1224,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.2420000000000755,
+      "durationMs": 0.14660000000003492,
       "diagnostics": []
     },
     {
@@ -1238,7 +1238,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.10989999999992506,
+      "durationMs": 0.13750000000004547,
       "diagnostics": []
     },
     {
@@ -1252,7 +1252,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.17360000000007858,
+      "durationMs": 0.19689999999991414,
       "diagnostics": []
     },
     {
@@ -1266,7 +1266,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.3890999999999849,
+      "durationMs": 0.40610000000003765,
       "diagnostics": []
     },
     {
@@ -1280,7 +1280,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.30380000000002383,
+      "durationMs": 0.33609999999998763,
       "diagnostics": []
     },
     {
@@ -1294,7 +1294,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.14960000000007767,
+      "durationMs": 0.17700000000002092,
       "diagnostics": []
     },
     {
@@ -1308,7 +1308,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 16.238700000000108,
+      "durationMs": 15.692699999999945,
       "diagnostics": []
     },
     {
@@ -1322,7 +1322,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.251800000000003,
+      "durationMs": 1.0720000000000027,
       "diagnostics": []
     },
     {
@@ -1336,7 +1336,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.741800000000012,
+      "durationMs": 0.5732000000000426,
       "diagnostics": []
     },
     {
@@ -1350,7 +1350,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.45470000000000255,
+      "durationMs": 0.49059999999997217,
       "diagnostics": []
     },
     {
@@ -1364,7 +1364,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.5380999999999858,
+      "durationMs": 0.5700999999999112,
       "diagnostics": []
     },
     {
@@ -1378,7 +1378,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 6.536500000000046,
+      "durationMs": 4.481300000000033,
       "diagnostics": []
     },
     {
@@ -1392,7 +1392,21 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.4126999999999725,
+      "durationMs": 3.8851999999999407,
+      "diagnostics": []
+    },
+    {
+      "id": "средний mastery темы не дисконтирует ответ другого ученика как повтор",
+      "source": "tests/learning-metrics.test.ts",
+      "initial": "Литералы и фиксированные входы, описанные в исходном тесте до реализации.",
+      "actions": "средний mastery темы не дисконтирует ответ другого ученика как повтор",
+      "expected": "средний mastery темы не дисконтирует ответ другого ученика как повтор",
+      "actual": {
+        "assertions": "passed",
+        "diagnostics": []
+      },
+      "status": "passed",
+      "durationMs": 0.7566000000000486,
       "diagnostics": []
     },
     {
@@ -1406,7 +1420,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 2212.3558000000003,
+      "durationMs": 2134.5617,
       "diagnostics": []
     },
     {
@@ -1420,7 +1434,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 114.65509999999995,
+      "durationMs": 80.51789999999983,
       "diagnostics": []
     },
     {
@@ -1434,7 +1448,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1884.5304999999998,
+      "durationMs": 1728.0989999999997,
       "diagnostics": []
     },
     {
@@ -1448,7 +1462,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 62.878999999999905,
+      "durationMs": 41.66849999999977,
       "diagnostics": []
     },
     {
@@ -1462,7 +1476,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 73.29439999999977,
+      "durationMs": 42.21399999999994,
       "diagnostics": []
     },
     {
@@ -1476,7 +1490,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 507.4827000000005,
+      "durationMs": 477.8104000000003,
       "diagnostics": []
     },
     {
@@ -1490,7 +1504,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 102.4400999999998,
+      "durationMs": 67.33639999999923,
       "diagnostics": []
     },
     {
@@ -1504,7 +1518,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 21.233900000000176,
+      "durationMs": 20.463199999999233,
       "diagnostics": []
     },
     {
@@ -1518,7 +1532,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 107.72050000000036,
+      "durationMs": 79.1864999999998,
       "diagnostics": []
     },
     {
@@ -1532,7 +1546,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 47.765300000000025,
+      "durationMs": 43.446100000000115,
       "diagnostics": []
     },
     {
@@ -1546,7 +1560,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 80.54899999999998,
+      "durationMs": 44.17919999999958,
       "diagnostics": []
     },
     {
@@ -1560,7 +1574,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 562.3914000000004,
+      "durationMs": 563.0385000000006,
       "diagnostics": []
     },
     {
@@ -1574,7 +1588,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 109.94599999999991,
+      "durationMs": 64.66180000000077,
       "diagnostics": []
     },
     {
@@ -1588,7 +1602,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 527.3978999999999,
+      "durationMs": 482.53049999999985,
       "diagnostics": []
     },
     {
@@ -1602,7 +1616,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 105.61649999999997,
+      "durationMs": 73.97079999999994,
       "diagnostics": []
     },
     {
@@ -1616,7 +1630,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 2.677500000000009,
+      "durationMs": 1.0870000000001028,
       "diagnostics": []
     },
     {
@@ -1630,7 +1644,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 15.400899999999979,
+      "durationMs": 17.1644,
       "diagnostics": []
     },
     {
@@ -1644,7 +1658,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 96.21040000000005,
+      "durationMs": 93.36770000000001,
       "diagnostics": []
     },
     {
@@ -1658,7 +1672,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 10.082999999999856,
+      "durationMs": 9.457300000000032,
       "diagnostics": []
     },
     {
@@ -1672,7 +1686,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 15.457799999999907,
+      "durationMs": 11.831900000000019,
       "diagnostics": []
     },
     {
@@ -1686,7 +1700,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.415000000000191,
+      "durationMs": 0.8854999999999791,
       "diagnostics": []
     },
     {
@@ -1700,7 +1714,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 2.052699999999959,
+      "durationMs": 1.7563000000000102,
       "diagnostics": []
     },
     {
@@ -1714,7 +1728,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.0828000000001339,
+      "durationMs": 0.6781999999999471,
       "diagnostics": []
     },
     {
@@ -1728,7 +1742,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 1.169800000000123,
+      "durationMs": 0.7104000000000497,
       "diagnostics": []
     },
     {
@@ -1742,7 +1756,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.330600000000004,
+      "durationMs": 0.21010000000001128,
       "diagnostics": []
     },
     {
@@ -1756,7 +1770,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.24939999999992324,
+      "durationMs": 0.1570000000000391,
       "diagnostics": []
     },
     {
@@ -1770,7 +1784,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.1813999999999396,
+      "durationMs": 0.13819999999998345,
       "diagnostics": []
     },
     {
@@ -1784,7 +1798,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.4068999999999505,
+      "durationMs": 0.33330000000000837,
       "diagnostics": []
     },
     {
@@ -1798,7 +1812,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.2156999999999698,
+      "durationMs": 0.181699999999978,
       "diagnostics": []
     },
     {
@@ -1812,7 +1826,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.3143999999999778,
+      "durationMs": 0.20479999999997744,
       "diagnostics": []
     },
     {
@@ -1826,7 +1840,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.22649999999998727,
+      "durationMs": 0.16680000000008022,
       "diagnostics": []
     },
     {
@@ -1840,7 +1854,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.25549999999998363,
+      "durationMs": 0.2615000000000691,
       "diagnostics": []
     },
     {
@@ -1854,7 +1868,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.25289999999995416,
+      "durationMs": 0.31910000000004857,
       "diagnostics": []
     },
     {
@@ -1868,7 +1882,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.29310000000009495,
+      "durationMs": 0.3288000000000011,
       "diagnostics": []
     },
     {
@@ -1882,7 +1896,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.2746999999999389,
+      "durationMs": 0.26720000000000255,
       "diagnostics": []
     },
     {
@@ -1896,7 +1910,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.4717000000000553,
+      "durationMs": 0.6669999999999163,
       "diagnostics": []
     },
     {
@@ -1910,7 +1924,7 @@
         "diagnostics": []
       },
       "status": "passed",
-      "durationMs": 0.7751999999998134,
+      "durationMs": 0.5817000000000689,
       "diagnostics": []
     }
   ]

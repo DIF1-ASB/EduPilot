@@ -3,8 +3,8 @@
   "realLearners": 0,
   "interpretation": "Deterministic software behavior under assumed response profiles. No observed learners and no evidence of educational effectiveness. Accuracy differs with difficulty exposure; cross-mode accuracy alone is not a learning effect.",
   "metadata": {
-    "generatedAt": "2026-10-15T15:29:22.683Z",
-    "gitCommit": "503569d76743e85ef2cfc8df51dbdba11959aeb0",
+    "generatedAt": "2026-10-15T15:39:44.831Z",
+    "gitCommit": "2c19f2a75dc45f9ed0f2f9efb0d704b7fc1de103",
     "workingTreeDirty": true,
     "bankSha256": "a5691d33f037639acfffbccb784c2493498f67a94901d2cf2b3ef44d2dab1a5c",
     "engineSha256": "267f5ffac3848fa1ad6547eb4995012a5dc1d6f1daafc4fd924618c62361db55"
