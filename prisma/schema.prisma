@@ -25,6 +25,8 @@ model User {
   submissions Submission[]
   attempts QuizAttempt[]
   quizSessions QuizSession[]
+  trainings TrainingSession[]
+  learningTasks LearningTask[]
 }
 model UserSettings {
   userId String @id
@@ -179,4 +181,63 @@ model QuizSession {
   user User @relation(fields:[userId],references:[id],onDelete:Cascade)
   material Material @relation(fields:[materialId],references:[id],onDelete:Cascade)
   @@index([userId,materialId])
+}
+
+model TrainingSession {
+  id String @id @default(cuid())
+  userId String
+  topic String
+  mode String
+  grade Int
+  configJson Json
+  algorithmVersion String
+  dataKind String @default("user")
+  createdAt DateTime @default(now())
+  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
+  turns TrainingTurn[]
+  @@index([userId,topic,createdAt])
+}
+model TrainingTurn {
+  id String @id @default(cuid())
+  sessionId String
+  sequence Int
+  questionId String
+  snapshotJson Json
+  selectionReason String
+  issuedAt DateTime @default(now())
+  session TrainingSession @relation(fields:[sessionId],references:[id],onDelete:Cascade)
+  attempt TrainingAttempt?
+  @@unique([sessionId,sequence])
+}
+model TrainingAttempt {
+  id String @id @default(cuid())
+  turnId String @unique
+  requestId String
+  answer String
+  correct Boolean
+  durationMs Int
+  levelBefore Int
+  levelAfter Int
+  masteryBefore Float
+  masteryAfter Float
+  reason String
+  evidenceJson Json
+  errorTagsJson Json
+  createdAt DateTime @default(now())
+  turn TrainingTurn @relation(fields:[turnId],references:[id],onDelete:Cascade)
+}
+model LearningTask {
+  id String @id @default(cuid())
+  ownerId String
+  classId String?
+  questionJson Json
+  status String @default("draft")
+  origin String
+  model String?
+  version Int @default(1)
+  reviewedAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  owner User @relation(fields:[ownerId],references:[id],onDelete:Cascade)
+  @@index([ownerId,status])
 }
