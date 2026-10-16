@@ -14,8 +14,6 @@ import {
   BookOpen,
   FileText,
   ClipboardCheck,
-  Presentation,
-  Clapperboard,
   FolderOpen,
   Users,
   Settings,
@@ -101,18 +99,6 @@ const tools: {
     description: "Проверяйте знания по-новому",
     color: "rose",
   },
-  {
-    type: "presentation",
-    icon: Presentation,
-    description: "Сложное становится наглядным",
-    color: "amber",
-  },
-  {
-    type: "video",
-    icon: Clapperboard,
-    description: "Сценарий вашего видеоурока",
-    color: "blue",
-  },
 ];
 export function EduPilot() {
   const router = useRouter();
@@ -126,13 +112,12 @@ export function EduPilot() {
   const [background, setBackground] =
     useState<BackgroundSettings>(defaultBackground);
   const [bgOpen, setBgOpen] = useState(false);
-  const [view, setView] = useState("teacher");
+  const view = session?.user?.role;
   const refresh = async () => {
     try {
       const data = await api("session");
       setSession(data);
       if (data.user) {
-        setView(data.user.settings?.preferences?.viewMode || data.user.role);
         setBackground({
           ...defaultBackground,
           ...data.user.settings?.preferences?.background,
@@ -243,16 +228,7 @@ export function EduPilot() {
               path={path}
               open={menu}
               collapsed={collapsed}
-              view={view}
               onCollapse={() => setCollapsed(!collapsed)}
-              setView={async (v: string) => {
-                if (v === "teacher" && session.user.role !== "teacher") {
-                  toast.info("Роль преподавателя выбирается при регистрации.");
-                  return;
-                }
-                setView(v);
-                await savePreferences({ viewMode: v });
-              }}
               logout={logout}
               theme={theme}
             />
@@ -359,13 +335,12 @@ export function GlassSidebar({
   path,
   open,
   collapsed,
-  view,
-  setView,
   onCollapse,
   logout,
   theme,
 }: any) {
   const { user, ai, navigate } = useApp();
+  const view = user.role;
   const links = [
     { path: "/chat", label: "Новый чат", icon: Plus },
     ...(view === "teacher"
@@ -380,8 +355,6 @@ export function GlassSidebar({
                     lesson: "план урока",
                     worksheet: "рабочий лист",
                     test: "контрольную",
-                    presentation: "презентацию",
-                    video: "видеоурок",
                   } as any
                 )[x.type],
           icon: x.icon,
@@ -439,22 +412,6 @@ export function GlassSidebar({
           aria-label={collapsed ? "Развернуть меню" : "Свернуть меню"}
         >
           <PanelLeftClose size={16} />
-        </button>
-      </div>
-      <div className="role-switch">
-        <button
-          className={view === "teacher" ? "active" : ""}
-          onClick={() => setView("teacher")}
-        >
-          <BookOpen size={14} />
-          <span>Учитель</span>
-        </button>
-        <button
-          className={view === "student" ? "active" : ""}
-          onClick={() => setView("student")}
-        >
-          <GraduationCap size={16} />
-          <span>Ученик</span>
         </button>
       </div>
       <button
@@ -599,7 +556,7 @@ function Dashboard({
             </p>
           </div>
           <span className="section-count">
-            {view === "teacher" ? "06" : "04"} ИНСТРУМЕНТОВ
+            {view === "teacher" ? "04 ИНСТРУМЕНТА" : "03 ИНСТРУМЕНТА"}
           </span>
         </div>
         <div className="tool-grid">
@@ -613,7 +570,7 @@ function Dashboard({
                   color: "mint",
                 },
                 ...tools.filter((x) =>
-                  ["worksheet", "test", "presentation"].includes(x.type),
+                  ["worksheet", "test"].includes(x.type),
                 ),
               ]
           ).map((t) => (
@@ -812,7 +769,7 @@ function Landing() {
               {
                 n: "01",
                 title: "Создавайте в своём ритме",
-                text: "Редактируемые планы уроков, рабочие листы, контрольные и презентации. От чистого листа до готового файла.",
+                text: "Редактируемые планы уроков, рабочие листы и контрольные. От чистого листа до готового файла.",
               },
               {
                 n: "02",
@@ -940,6 +897,7 @@ function AuthPage({ register }: { register: boolean }) {
                   <option value="teacher">Учитель</option>
                   <option value="student">Ученик</option>
                 </select>
+                <small>Роль выбирается при регистрации и определяет ваш кабинет.</small>
               </Field>
             </>
           )}

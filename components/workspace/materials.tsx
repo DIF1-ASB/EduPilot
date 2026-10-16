@@ -32,6 +32,8 @@ import {
   subjects,
   toolNames,
   toolTypes,
+  isCreationEnabled,
+  mediaCreationDisabledMessage,
   ToolType,
   MaterialRecord,
   GeneratorInput,
@@ -101,6 +103,15 @@ export function ToolPage({ type }: { type: ToolType }) {
         icon={<FileText />}
         title="Инструмент не найден"
         description="Выберите инструмент в меню."
+      />
+    );
+  if (!isCreationEnabled(type))
+    return (
+      <EmptyState
+        icon={<FileText />}
+        title="Создание отключено"
+        description={`${mediaCreationDisabledMessage} Ранее сохранённые материалы доступны в разделе «Мои материалы».`}
+        action={<button className="button" onClick={() => navigate("/materials")}>Мои материалы</button>}
       />
     );
   const upload = async (file?: File) => {
@@ -679,7 +690,7 @@ export function MaterialsPage() {
                 >
                   <FileText size={15} />
                 </button>
-                <button
+                {isCreationEnabled(m.type) && <button
                   className="icon-button"
                   title="Создать копию"
                   onClick={async () => {
@@ -693,7 +704,7 @@ export function MaterialsPage() {
                   }}
                 >
                   <Copy size={15} />
-                </button>
+                </button>}
                 <button
                   className="icon-button danger"
                   title="Удалить материал"
@@ -947,7 +958,7 @@ export function MaterialEditor({ id }: { id: string }) {
           >
             <Printer size={17} />
           </button>
-          <button
+          {isCreationEnabled(m.type) && <button
             className="icon-button"
             aria-label="Создать копию"
             onClick={async () => {
@@ -966,7 +977,7 @@ export function MaterialEditor({ id }: { id: string }) {
             }}
           >
             <Copy size={17} />
-          </button>
+          </button>}
         </div>
         <div className="button-row">
           {user.role === "teacher" && (

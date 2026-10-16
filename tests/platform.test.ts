@@ -9,6 +9,7 @@ import {
   template,
   lessonDurations,
   withoutAnswers,
+  type MaterialRecord,
 } from "../lib/domain";
 import { hashPassword, verifyPassword } from "../lib/security";
 const file = `prisma/test-${process.pid}.db`;
@@ -141,6 +142,39 @@ describe("Критические операции EduPilot", () => {
       (await call("materials/" + materialId, "DELETE", undefined, outsider))
         .status,
     ).toBe(404);
+  });
+  it.each(["presentation", "video"] as const)("запрещает генерацию %s даже через прямой API", async (type) => {
+    for (const cookie of [teacher, student]) {
+      const r = await call("generate", "POST", { type, title: "Новый материал", subject: "Математика", grade: 7 }, cookie);
+      expect(r.status).toBe(410);
+      expect(await r.json()).toEqual({ error: "Создание презентаций и видеоуроков отключено." });
+    }
+  });
+  it.each(["presentation", "video"] as const)("запрещает новое сохранение %s, но сохраняет доступ к старым материалам", async (type) => {
+    const input = { type, title: "Старый материал", subject: "Математика", grade: 7, contentJson: { demo: true, sections: [{ id: "legacy-section", title: "Тема", body: "Сохранённый текст" }] } };
+    const client = await db();
+    const user = await client.user.findUniqueOrThrow({ where: { email: "teacher@test.example" } });
+    // Seed a record as if it existed before creation was disabled.
+    const old = await client.material.create({ data: { ...input, userId: user.id } });
+    const count = await client.material.count();
+    for (const cookie of [teacher, student]) {
+      expect.soft((await call("materials", "POST", input, cookie)).status).toBe(410);
+    }
+    expect.soft((await call(`materials/${old.id}/duplicate`, "POST", {}, teacher)).status).toBe(410);
+    expect.soft(await client.material.count()).toBe(count);
+    const read = await call(`materials/${old.id}`, "GET", undefined, teacher);
+    expect(read.status).toBe(200);
+    const saved = await read.json() as MaterialRecord;
+    expect(saved.contentJson.sections[0].body).toBe("Сохранённый текст");
+    expect((await call(`materials/${old.id}`, "PATCH", { ...saved, title: "Исправленный материал" }, teacher)).status).toBe(200);
+    expect((await call(`materials/${old.id}/export?format=pptx`, "GET", undefined, teacher)).status).toBe(200);
+  });
+  it("не меняет роль аккаунта через настройки кабинета", async () => {
+    for (const [cookie, role, other] of [[teacher, "teacher", "student"], [student, "student", "teacher"]]) {
+      expect((await call("settings", "PATCH", { role: other, preferences: { viewMode: other } }, cookie)).status).toBe(200);
+      const session = await (await call("session", "GET", undefined, cookie)).json() as { user: { role: string } };
+      expect(session.user.role).toBe(role);
+    }
   });
   it("сохраняет правки и отклоняет конфликт версии", async () => {
     const m: any = await (

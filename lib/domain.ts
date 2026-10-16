@@ -9,6 +9,11 @@ export const toolTypes = [
   "notes",
 ] as const;
 export type ToolType = (typeof toolTypes)[number];
+// Keep historical types readable/editable; this policy only controls NEW records.
+export const mediaCreationDisabledMessage = "Создание презентаций и видеоуроков отключено.";
+export function isCreationEnabled(type: string) {
+  return (toolTypes as readonly string[]).includes(type) && type !== "presentation" && type !== "video";
+}
 export const toolNames: Record<ToolType, string> = {
   lesson: "План урока",
   worksheet: "Рабочий лист",

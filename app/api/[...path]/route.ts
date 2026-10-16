@@ -23,6 +23,8 @@ import {
   generatorSchema,
   documentSchema,
   withoutAnswers,
+  isCreationEnabled,
+  mediaCreationDisabledMessage,
 } from "@/lib/domain";
 import { aiStatus, getProvider } from "@/lib/ai";
 import { storage } from "@/lib/storage";
@@ -157,8 +159,9 @@ async function handle(req: Request) {
       });
     }
     if (area === "generate" && method === "POST") {
-      await rateLimit(`ai:${user.id}`, 20, 3600);
       const data = generatorSchema.parse(await readJson(req));
+      if (!isCreationEnabled(data.type)) fail(410, mediaCreationDisabledMessage);
+      await rateLimit(`ai:${user.id}`, 20, 3600);
       if (data.type === "review") teacher();
       return json({
         content: await getProvider().generateStructuredContent(data),
@@ -175,6 +178,7 @@ async function handle(req: Request) {
         );
       if (!id && method === "POST") {
         const data = materialInput.parse(await readJson(req));
+        if (!isCreationEnabled(data.type)) fail(410, mediaCreationDisabledMessage);
         if (data.type === "review") teacher();
         const { version, ...rest } = data;
         return json(
@@ -291,6 +295,7 @@ async function handle(req: Request) {
       }
       if (action === "duplicate" && method === "POST") {
         if (!own) fail(403, "Нет доступа.");
+        if (!isCreationEnabled(material.type)) fail(410, mediaCreationDisabledMessage);
         return json(
           await client.material.create({
             data: {
