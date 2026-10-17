@@ -29,6 +29,8 @@ import {
 import { aiStatus, getProvider } from "@/lib/ai";
 import { storage } from "@/lib/storage";
 import { exportMaterial } from "@/lib/export";
+import { canCreateMaterial, canEditMaterial, type Actor } from '@/lib/materials/policy';
+import { createAssignment, listAssignments, submitHomework } from '@/lib/assignments/service';
 export const dynamic = "force-dynamic";
 const json = (
   body: unknown,
@@ -112,6 +114,7 @@ async function handle(req: Request) {
       }
     }
     const user = await requireUser(req);
+    const actor:Actor={id:user.id,role:user.role==='teacher'?'teacher':'student'};
     await rateLimit(`request:${user.id}`, 240, 60);
     const teacher = () => {
       if (user.role !== "teacher") fail(403, "Доступно только преподавателям.");
@@ -161,6 +164,7 @@ async function handle(req: Request) {
     if (area === "generate" && method === "POST") {
       const data = generatorSchema.parse(await readJson(req));
       if (!isCreationEnabled(data.type)) fail(410, mediaCreationDisabledMessage);
+      if (!canCreateMaterial(actor,data.type)) fail(403,'Этот материал создаёт преподаватель. Ученику доступен личный конспект.');
       await rateLimit(`ai:${user.id}`, 20, 3600);
       if (data.type === "review") teacher();
       return json({
@@ -169,16 +173,17 @@ async function handle(req: Request) {
       });
     }
     if (area === "materials") {
-      if (!id && method === "GET")
-        return json(
-          await client.material.findMany({
+      if (!id && method === "GET") {
+        const materials = await client.material.findMany({
             where: { userId: user.id },
             orderBy: { updatedAt: "desc" },
-          }),
-        );
+          });
+        return json(materials.map(m=>({...((actor.role==='student'&&m.type!=='notes')?withoutAnswers(m):m),canEdit:canEditMaterial(actor,m)})));
+      }
       if (!id && method === "POST") {
         const data = materialInput.parse(await readJson(req));
         if (!isCreationEnabled(data.type)) fail(410, mediaCreationDisabledMessage);
+        if (!canCreateMaterial(actor,data.type)) fail(403,'Доступно только преподавателям.');
         if (data.type === "review") teacher();
         const { version, ...rest } = data;
         return json(
@@ -296,6 +301,7 @@ async function handle(req: Request) {
       if (action === "duplicate" && method === "POST") {
         if (!own) fail(403, "Нет доступа.");
         if (!isCreationEnabled(material.type)) fail(410, mediaCreationDisabledMessage);
+        if (!canCreateMaterial(actor,material.type)) fail(403,'Копирование преподавательского материала недоступно.');
         return json(
           await client.material.create({
             data: {
@@ -313,12 +319,14 @@ async function handle(req: Request) {
       }
       if (method === "GET")
         return json({
-          ...(own ? material : withoutAnswers(material)),
-          canEdit: own,
+          ...((own && (actor.role==='teacher'||material.type==='notes')) ? material : withoutAnswers(material)),
+          canEdit: canEditMaterial(actor,material),
         });
       if (!own) fail(403, "Нет доступа.");
       if (method === "PATCH") {
+        if (!canEditMaterial(actor,material)) fail(403,'Материал доступен только для чтения.');
         const data = materialInput.parse(await readJson(req));
+        if(actor.role==='student'&&!canCreateMaterial(actor,data.type)) fail(403,'Доступно только преподавателям.');
         if (data.type !== material.type)
           fail(400, "Тип материала нельзя изменить.");
         const { version, ...rest } = data;
@@ -340,6 +348,7 @@ async function handle(req: Request) {
         return json(await client.material.findUnique({ where: { id } }));
       }
       if (method === "DELETE") {
+        if (!canEditMaterial(actor,material)) fail(403,'Материал доступен только для чтения.');
         if (await client.assignment.count({ where: { materialId: id } }))
           fail(409, "Материал используется в задании класса.");
         await client.material.delete({ where: { id } });
@@ -664,18 +673,9 @@ async function handle(req: Request) {
       });
       if (!school) fail(404, "Класс не найден.");
       if (method === "GET") {
-        const assignments = await client.assignment.findMany({
-          where: { classId: id },
-          include: {
-            submissions: {
-              where: user.role === "teacher" ? {} : { studentId: user.id },
-              include: {
-                grade: true,
-                student: { select: { firstName: true, lastName: true } },
-              },
-            },
-          },
-        });
+        const assignments = (await listAssignments(actor)).filter(a=>a.classId===id).map(a=>({...a,
+          submissions:('submissions' in a?a.submissions:a.submission?[a.submission]:[]).map(s=>({...s,contentJson:{text:s.text}}))
+        }));
         const enrollments =
           user.role === "teacher"
             ? await client.enrollment.findMany({
@@ -707,34 +707,7 @@ async function handle(req: Request) {
           where: { id: b.assignmentId, classId: id },
         });
         if (!a) fail(404, "Задание не найдено.");
-        if (a.dueDate && a.dueDate < new Date()) fail(422, "Срок сдачи истёк.");
-        const existing = await client.submission.findUnique({
-          where: {
-            assignmentId_studentId: { assignmentId: a.id, studentId: user.id },
-          },
-          include: { grade: true },
-        });
-        if (existing?.grade)
-          fail(
-            409,
-            "Работа уже оценена. Обсудите исправления с преподавателем.",
-          );
-        return json(
-          await client.submission.upsert({
-            where: {
-              assignmentId_studentId: {
-                assignmentId: a.id,
-                studentId: user.id,
-              },
-            },
-            create: {
-              assignmentId: a.id,
-              studentId: user.id,
-              contentJson: { text: b.text },
-            },
-            update: { contentJson: { text: b.text }, submittedAt: new Date() },
-          }),
-        );
+        return json(await submitHomework(actor,a.id,{text:b.text}));
       }
       teacher();
       if (action === "invite" && method === "POST")
@@ -758,30 +731,7 @@ async function handle(req: Request) {
         return json({ ok: true });
       }
       if (action === "assignment" && method === "POST") {
-        const b = z
-          .object({
-            materialId: z.string(),
-            title: z.string().min(1).max(200),
-            dueDate: z.string().optional(),
-          })
-          .parse(await readJson(req));
-        if (
-          !(await client.material.findFirst({
-            where: { id: b.materialId, userId: user.id },
-          }))
-        )
-          fail(404, "Материал недоступен.");
-        return json(
-          await client.assignment.create({
-            data: {
-              classId: id,
-              materialId: b.materialId,
-              title: b.title,
-              dueDate: b.dueDate ? new Date(b.dueDate) : null,
-            },
-          }),
-          201,
-        );
+        return json(await createAssignment(actor,id,await readJson(req)),201);
       }
       if (action === "grade" && method === "POST") {
         const b = z
