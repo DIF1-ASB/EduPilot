@@ -284,6 +284,8 @@ async function handle(req: Request) {
         if (!canEditMaterial(actor,material)) fail(403,'Материал доступен только для чтения.');
         const data = materialInput.parse(await readJson(req));
         if(actor.role==='student'&&!canCreateMaterial(actor,data.type)) fail(403,'Доступно только преподавателям.');
+        const priorContent=material.contentJson as any;
+        if(material.type==='notes'&&priorContent?.schemaVersion===2&&priorContent.kind==='notes')validateNotes(data.contentJson,{ready:data.status==='ready'});
         if('schemaVersion' in data.contentJson&&data.contentJson.kind==='notes'){
           if(data.type!=='notes')fail(400,'Неверный тип конспекта.');
           validateNotes(data.contentJson,{ready:data.status==='ready'});

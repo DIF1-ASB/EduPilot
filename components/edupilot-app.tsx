@@ -52,6 +52,7 @@ const AssignmentsPage=dynamic(()=>import('./assignments/list').then(m=>m.Assignm
 const AssignedQuizPage=dynamic(()=>import('./assignments/list').then(m=>m.AssignedQuizPage));
 const AssignmentPage=dynamic(()=>import('./assignments/detail').then(m=>m.AssignmentPage));
 const AttemptPage=dynamic(()=>import('./assignments/attempt').then(m=>m.AttemptPage));
+const NotesForm=dynamic(()=>import('./notes/form').then(m=>m.NotesForm));
 const ChatPage = dynamic(() =>
   import("./workspace/chat").then((m) => m.ChatPage),
 );
@@ -179,7 +180,7 @@ export function EduPilot() {
     content = <Dashboard view={view} onBackground={() => setBgOpen(!bgOpen)} />;
   else if(path==='/assignments/homework'||path==='/assignments/tests')content=<AssignmentsPage kind={path.endsWith('tests')?'test':'homework'}/>;
   else if(path.startsWith('/assignments/')){const [, ,assignmentId,attempts,attemptId]=path.split('/');content=attempts==='attempts'&&attemptId?<AttemptPage key={assignmentId+':'+attemptId} assignmentId={assignmentId} attemptId={attemptId}/>:<AssignmentPage key={assignmentId} id={assignmentId}/>;}
-  else if(path==='/notes/new')content=<ToolPage type="notes"/>;
+  else if(path==='/notes/new'||path==='/tools/notes')content=<NotesForm/>;
   else if (path.startsWith("/tools/"))
     content = <ToolPage type={path.split("/")[2] as ToolType} />;
   else if (path === "/materials") content = <MaterialsPage />;

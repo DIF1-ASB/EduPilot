@@ -3196,3 +3196,17 @@ b {
 .assessment-author input, .assessment-author textarea, .assessment-author select { max-width:100%; }
 .assessment-author .button-row { flex-wrap:wrap; }
 @media(max-width:760px) { .assignment-grid { grid-template-columns:1fr; } .student-question { padding:18px 14px; } .assessment-question { padding:14px; } }
+.notes-fields { border:0; padding:0; margin:0; min-width:0; }
+.notes-fields > h2 { margin-top:30px; }
+.notes-fields fieldset { min-width:0; padding:18px; margin:18px 0; border:1px solid var(--border-glass); border-radius:12px; }
+.notes-paper { margin-top:24px; background:#fff; color:#172033; }
+.notes-paper .notes-preview :is(p,h2,h3,li,dt,dd,summary) { color:#172033; }
+.notes-preview { line-height:1.7; overflow-wrap:anywhere; }
+.notes-preview section { margin:24px 0; }
+.notes-preview dt { font-weight:600; }
+.notes-preview dd { margin:4px 0 20px; }
+.notes-preview li { margin-bottom:12px; }
+.notes-preview details { margin:8px 0; }
+.notes-print-answers { display:none; }
+.notes-toolbar { flex-wrap:wrap; margin-bottom:24px; }
+@media print { .notes-toolbar,.notes-fields,.notes-screen-answer { display:none!important; } .notes-print-answers { display:block; break-before:page; } .notes-paper { padding:0; border:0; box-shadow:none; } }

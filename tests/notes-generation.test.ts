@@ -36,7 +36,8 @@ describe('dedicated notes contract',()=>{
    const basic={title:input.title,type:'notes',subject:input.subject,grade:10};
    expect((await f.call('materials','POST',{...basic,status:'ready',contentJson:createNotesDraft()},f.student.cookie)).status).toBe(400);
    expect((await f.call('materials','POST',{...basic,contentJson:{sections:[{id:'old',title:'Этап',body:'Текст',duration:15}]}},f.student.cookie)).status).toBe(400);
-   expect((await f.call('materials','POST',{...basic,status:'draft',contentJson:createNotesDraft()},f.student.cookie)).status).toBe(201);
+   const saved=await f.call('materials','POST',{...basic,status:'draft',contentJson:createNotesDraft()},f.student.cookie);expect(saved.status).toBe(201);const note:any=await saved.json();
+   expect((await f.call('materials/'+note.id,'PATCH',{...basic,version:1,contentJson:{demo:false,sections:[{id:'lesson',title:'Этап',body:'Текст',duration:15}]}},f.student.cookie)).status).toBe(400);
    expect((await f.call('materials','POST',{...basic,status:'ready',contentJson:valid()},f.teacher.cookie)).status).toBe(201);
   }finally{await f.close();}
  });

@@ -12,7 +12,7 @@ import {
 import PptxGenJS from "pptxgenjs";
 import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
-import { documentSchema, toolNames, ToolType, Section } from "./domain";
+import { documentSchema, toolNames, ToolType, Section, type DocumentContent } from "./domain";
 import { getRuntime } from "./runtime";
 import { slidePalette } from "./slide-theme";
 import { db } from "./database";
@@ -41,7 +41,8 @@ export async function exportMaterial(
   format: string,
   teacher: boolean,
 ) {
-  const data = materialSections(parseMaterialContent(material.contentJson), teacher),
+  const projected=materialSections(parseMaterialContent(material.contentJson),teacher);
+  const data:DocumentContent = material.type==='notes'?{...projected,totalDuration:undefined,sections:projected.sections.map(({duration,...section})=>section)}:projected,
     sections = data.sections,
     title = material.title;
   if (format === "docx") {

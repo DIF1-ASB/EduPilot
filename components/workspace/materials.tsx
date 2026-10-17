@@ -30,6 +30,7 @@ import { api } from "@/lib/client";
 import { materialSections } from '@/lib/materials/content';
 import {AssessmentEditor,convertLegacyAssessment} from '../assessment/editor';
 import {AssignedQuizPage} from '../assignments/list';
+import {NotesEditor} from '../notes/editor';
 import { slidePalette } from "@/lib/slide-theme";
 import {
   subjects,
@@ -842,6 +843,7 @@ export function MaterialEditor({ id }: { id: string }) {
     );
   if (!material) return <div className="skeleton-list" />;
   const m = material;
+  if(m.type==='notes'&&m.canEdit!==false)return <NotesEditor key={m.id} material={m} onSave={async data=>{const result=await api<MaterialRecord>('materials/'+id,'PATCH',data);setMaterial(result);current.current=result;return result;}}/>;
   const download = async (format: string,withAnswers=answers) => {
     await save();
     if (revision.current > savedRevision.current) {toast.error('Сначала сохраните изменения');return;}
