@@ -1,8 +1,9 @@
 import { beforeAll, afterAll, describe, expect, it } from 'vitest';
 import { openPlatformFixture, type PlatformFixture } from './helpers/platform';
+import {createNotesDraft} from '../lib/notes/schema';
 let f:PlatformFixture;
 const content={demo:false,sections:[{id:'old',title:'Тема',body:'Текст',answer:'PRIVATE_OLD_KEY'}]};
-const input=(type:string)=>({title:'Проверка прав',type,subject:'Математика',grade:7,contentJson:content});
+const input=(type:string)=>({title:'Проверка прав',type,subject:'Математика',grade:7,contentJson:type==='notes'?createNotesDraft():content});
 beforeAll(async()=>{f=await openPlatformFixture('material-policy');});afterAll(async()=>{await f?.close();});
 describe('material authorization',()=>{
  it.each(['lesson','worksheet','test','review'])('rejects student creation/generation/edit/copy of %s before external AI',async type=>{

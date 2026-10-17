@@ -34,6 +34,7 @@ import { handleAssignmentRequest } from '@/lib/assignments/http';
 import { toLegacyAttempt } from '@/lib/assessment/projection';
 import {assessmentTemplate} from '@/lib/assessment/generation';
 import {validateAssessment} from '@/lib/assessment/schema';
+import {notesInputSchema,validateNotes} from '@/lib/notes/schema';
 export const dynamic = "force-dynamic";
 const json = (
   body: unknown,
@@ -167,7 +168,14 @@ async function handle(req: Request) {
       });
     }
     if (area === "generate" && method === "POST") {
-      const raw=await readJson(req),data = generatorSchema.parse(raw);
+      const raw=await readJson(req);
+      if(raw?.type==='notes'){
+        const {type,...fields}=raw,input=notesInputSchema.parse(fields);
+        if(!canCreateMaterial(actor,'notes'))fail(403,'Нет доступа.');
+        await rateLimit(`ai:${user.id}`,20,3600);
+        return json({content:await getProvider().generateNotes(input),mode:aiStatus().mode});
+      }
+      const data = generatorSchema.parse(raw);
       if (!isCreationEnabled(data.type)) fail(410, mediaCreationDisabledMessage);
       if (!canCreateMaterial(actor,data.type)) fail(403,'Этот материал создаёт преподаватель. Ученику доступен личный конспект.');
       await rateLimit(`ai:${user.id}`, 20, 3600);
@@ -190,6 +198,8 @@ async function handle(req: Request) {
         const data = materialInput.parse(await readJson(req));
         if (!isCreationEnabled(data.type)) fail(410, mediaCreationDisabledMessage);
         if (!canCreateMaterial(actor,data.type)) fail(403,'Доступно только преподавателям.');
+        if(data.type==='notes')validateNotes(data.contentJson,{ready:data.status==='ready'});
+        else if('schemaVersion' in data.contentJson&&data.contentJson.kind==='notes')fail(400,'Неверный тип конспекта.');
         if('schemaVersion' in data.contentJson&&data.contentJson.kind==='assessment'){
           if(!['test','worksheet'].includes(data.type))fail(400,'Структура вопросов доступна для контрольной или рабочего листа.');
           validateAssessment(data.contentJson,{publishable:data.status==='ready'});
@@ -274,6 +284,10 @@ async function handle(req: Request) {
         if (!canEditMaterial(actor,material)) fail(403,'Материал доступен только для чтения.');
         const data = materialInput.parse(await readJson(req));
         if(actor.role==='student'&&!canCreateMaterial(actor,data.type)) fail(403,'Доступно только преподавателям.');
+        if('schemaVersion' in data.contentJson&&data.contentJson.kind==='notes'){
+          if(data.type!=='notes')fail(400,'Неверный тип конспекта.');
+          validateNotes(data.contentJson,{ready:data.status==='ready'});
+        }
         if('schemaVersion' in data.contentJson&&data.contentJson.kind==='assessment'){
           if(!['test','worksheet'].includes(data.type))fail(400,'Неверный тип структуры материала.');
           validateAssessment(data.contentJson,{publishable:data.status==='ready'});

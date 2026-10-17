@@ -11,12 +11,15 @@ import { HttpError } from "./security";
 import type {MaterialContent} from './materials/content';
 import type {AssessmentDocument} from './assessment/schema';
 import {assessmentTemplate,buildAssessmentMessages,parseAssessmentReply} from './assessment/generation';
+import {createNotesDraft,type NotesInput,type NotesDocument} from './notes/schema';
+import {buildNotesMessages,parseNotesReply} from './notes/generation';
 export type ConversationMessage = { role: string; content: string };
 export interface AIProvider {
   demo: boolean;
   generateText(messages: ConversationMessage[]): Promise<string>;
   generateStructuredContent(p: GeneratorInput): Promise<MaterialContent>;
   generateAssessment(p:GeneratorInput):Promise<AssessmentDocument>;
+  generateNotes(p:NotesInput):Promise<NotesDocument>;
   analyzeImage(dataUrl: string, prompt: string): Promise<string>;
   analyzeDocument(text: string, prompt: string): Promise<string>;
   generateLessonPlan(p: GeneratorInput): Promise<DocumentContent>;
@@ -51,6 +54,7 @@ export class MockAIProvider implements AIProvider {
     return template(p);
   }
   async generateAssessment(p:GeneratorInput):Promise<AssessmentDocument>{return assessmentTemplate(p);}
+  async generateNotes(_p:NotesInput):Promise<NotesDocument>{return {...createNotesDraft(),demo:true};}
   async analyzeImage(_dataUrl: string, _prompt: string): Promise<string> {
     throw new HttpError(
       422,
@@ -76,6 +80,11 @@ export class MockAIProvider implements AIProvider {
 }
 export class LiveAIProvider extends MockAIProvider {
   demo = false;
+  async generateNotes(p:NotesInput):Promise<NotesDocument>{
+    let invalid:string|undefined;
+    for(let i=0;i<2;i++){const raw=await this.request(buildNotesMessages(p,invalid),true);try{return parseNotesReply(raw);}catch{invalid=raw;}}
+    throw new HttpError(502,'ИИ не сформировал содержательный конспект. Готовый материал не сохранён. Повторите запрос или заполните вручную.');
+  }
   private async request(
     messages: unknown[],
     structured = false,

@@ -252,7 +252,9 @@ export function template(p: GeneratorInput): DocumentContent {
 export function withoutAnswers<
   T extends { contentJson: unknown; metadataJson: unknown },
 >(m: T): T {
-  const c = materialSections(parseMaterialContent(m.contentJson), false);
+  const parsed=parseMaterialContent(m.contentJson);
+  if('schemaVersion' in parsed&&parsed.kind==='notes')return {...m,contentJson:parsed,metadataJson:{}};
+  const c = materialSections(parsed, false);
   return {
     ...m,
     contentJson: {
