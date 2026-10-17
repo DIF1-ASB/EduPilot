@@ -22,6 +22,7 @@ export function toStudentAttempt(assignment:PolicyRow,attempt:PrivateAttempt,use
  const reviews=Array.isArray(attempt.reviewJson)?attempt.reviewJson as {questionId:string,comment:string}[]:[];
  return {id:attempt.id,assignmentId:attempt.assignmentId,number:attempt.number,variantId:attempt.variantId,status:attempt.status,version:attempt.version,
  startedAt:attempt.startedAt.toISOString(),expiresAt:attempt.expiresAt.toISOString(),submittedAt:attempt.submittedAt?.toISOString()??null,completionKind:attempt.completionKind,serverTime:now.toISOString(),
+ instructions:attempt.snapshot.instructions,variantLabel:attempt.snapshot.variants.find(v=>v.id===attempt.variantId)!.label,
  answers:ownAnswers(attempt.submittedAnswersJson??attempt.draftAnswersJson),questions:attempt.snapshot.variants.find(v=>v.id===attempt.variantId)!.questions.map(toPublicQuestion),
  result:result?{score:result.score,autoScore:result.autoScore,maxScore:result.maxScore,
  teacherComments:reviews.map(m=>({questionId:m.questionId,comment:m.comment})),

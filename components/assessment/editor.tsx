@@ -2,6 +2,8 @@
 import {useState} from 'react';
 import type {MaterialRecord} from '@/lib/domain';
 import {questionKinds,defaultAnswerLines,validateAssessment,type Question,type QuestionKind,type AssessmentDocument} from '@/lib/assessment/schema';
+import {buildAnswerSheet} from '@/lib/assessment/sheet';
+import {SheetPreview} from './sheet-preview';
 const names:Record<QuestionKind,string>={single:'Один вариант',multiple:'Несколько вариантов',short:'Краткий ответ',numeric:'Числовой ответ',open:'Развёрнутый ответ'};
 export function editAssessmentQuestion(material:MaterialRecord,variantId:string,questionId:string,patch:Partial<Question>):MaterialRecord{
  const doc=material.contentJson;if(!('schemaVersion' in doc)||doc.kind!=='assessment')throw new Error('Нужна структурированная работа');
@@ -22,7 +24,7 @@ export function convertLegacyAssessment(material:MaterialRecord):MaterialRecord{
 }
 type Props={material:MaterialRecord,onChange:(m:MaterialRecord)=>void,onSave:()=>Promise<void>,onPreview:()=>void,onDownload?:(format:string,answers:boolean)=>void};
 export function AssessmentEditor({material,onChange,onSave,onPreview,onDownload}:Props){
- const [mode,setMode]=useState<'edit'|'blank'|'keys'>('edit'),[error,setError]=useState('');
+ const [mode,setMode]=useState<'edit'|'blank'|'keys'>('edit'),[error,setError]=useState(''),[variantId,setVariantId]=useState('');
  const doc=material.contentJson;if(!('schemaVersion' in doc)||doc.kind!=='assessment')return null;
  const mutate=(content:AssessmentDocument)=>onChange({...material,status:'draft',contentJson:content,metadataJson:{...material.metadataJson,keysConfirmed:false}});
  const question=(v:string,q:string,patch:Partial<Question>)=>onChange(editAssessmentQuestion(material,v,q,patch));
@@ -69,10 +71,6 @@ export function AssessmentEditor({material,onChange,onSave,onPreview,onDownload}
    </section>)}
    <button className="button secondary" disabled={doc.variants.length>=4||totalQuestions+doc.variants[0].questions.length>100} onClick={()=>mutate({...doc,variants:[...doc.variants,{...doc.variants[0],id:crypto.randomUUID(),label:`Вариант ${doc.variants.length+1}`,questions:doc.variants[0].questions.map(q=>({...q,id:crypto.randomUUID()}))}]})}>Добавить вариант работы</button>
    <label className="check-field section-space"><input type="checkbox" checked={material.metadataJson.keysConfirmed===true} onChange={e=>confirmKeys(e.target.checked)}/>Ключи, критерии и факты проверены преподавателем. Изменение материала сбросит подтверждение.</label>
-  </>:<article className="answer-sheet-preview">{doc.variants.map(v=><section key={v.id}><h2>{v.label}</h2><p>ФИО: ____________________ Класс: ______ Дата: __________</p><p>{doc.instructions}</p><p>Максимум: {v.questions.reduce((n,q)=>n+q.points,0)} баллов</p>
-   {v.questions.map((q,i)=><section className="answer-sheet-question" key={q.id}><h3>Задание {i+1} · {q.points} баллов</h3><p style={{whiteSpace:'pre-wrap'}}>{q.prompt}</p>{(q.kind==='single'||q.kind==='multiple')&&q.options.map(o=><p key={o.id}>☐ {o.label}</p>)}
-    {Array.from({length:q.answerLines},(_,i)=><div className="answer-line" style={{height:28,borderBottom:'1px solid #64748b'}} key={i}/>)}
-    {mode==='keys'&&<p>Ключ / критерии: {q.kind==='open'?q.criteria:q.kind==='single'||q.kind==='multiple'?q.options.filter(o=>q.correctOptionIds.includes(o.id)).map(o=>o.label).join('; '):q.acceptedAnswers.join('; ')}{q.explanation?' · '+q.explanation:''}</p>}
-   </section>)}</section>)}</article>}
+  </>:<><label className="field sheet-variant-control">Предпросмотр варианта<select value={doc.variants.some(v=>v.id===variantId)?variantId:doc.variants[0].id} onChange={e=>setVariantId(e.target.value)}>{doc.variants.map(v=><option key={v.id} value={v.id}>{v.label}</option>)}</select><span>Скачивание включает все варианты; ключи — отдельным разделом в соответствующем режиме.</span></label><SheetPreview sheet={buildAnswerSheet(material,{variantId:doc.variants.some(v=>v.id===variantId)?variantId:doc.variants[0].id,includeTeacherKeys:mode==='keys'})}/></>}
  </div>;
 }

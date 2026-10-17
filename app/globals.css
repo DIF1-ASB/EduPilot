@@ -3210,3 +3210,18 @@ b {
 .notes-print-answers { display:none; }
 .notes-toolbar { flex-wrap:wrap; margin-bottom:24px; }
 @media print { .notes-toolbar,.notes-fields,.notes-screen-answer { display:none!important; } .notes-print-answers { display:block; break-before:page; } .notes-paper { padding:0; border:0; box-shadow:none; } }
+.answer-sheet-preview { background:white; color:#172334; padding:clamp(20px,4vw,56px); max-width:794px; margin:24px auto; border-radius:4px; }
+.answer-sheet-preview :is(h1,h2,h3,p) { color:#172334; }
+.answer-sheet-preview h1 { font-size:26px; }.answer-sheet-preview h2 { font-size:18px; }
+.answer-sheet-preview p { line-height:1.6; }.sheet-text { white-space:pre-wrap; overflow-wrap:anywhere; }
+.answer-sheet-question { margin:28px 0; }.sheet-question-start { break-after:avoid; }
+.answer-line { height:28px; border-bottom:1px solid #64748b; break-inside:avoid; }
+.sheet-checkbox { display:inline-block; width:12px; height:12px; border:1px solid currentColor; margin-right:5px; }
+.sheet-teacher-keys { margin-top:48px; padding-top:24px; border-top:2px solid #64748b; break-before:page; }
+@media print {
+ body:has(.answer-sheet-preview) :is(.page-heading,.button-row,.sheet-variant-control,.ai-disclaimer,.form-error) { display:none!important; }
+ .answer-sheet-preview { max-width:none; padding:0; margin:0; border:0; border-radius:0; }
+ .answer-sheet-preview :is(h1,h2,h3,.sheet-answer-label,.sheet-option) { break-after:avoid; }
+ .answer-sheet-preview :is(p,.answer-line) { orphans:2; widows:2; }
+ .sheet-teacher-keys { border:0; margin-top:0; }
+}
