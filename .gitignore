@@ -35,6 +35,7 @@ yarn-error.log*
 /private-storage/
 /test-results/
 /playwright-report/
+/output/playwright/
 *.tsbuildinfo
 
 # vercel

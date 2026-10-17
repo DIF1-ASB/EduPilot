@@ -20,6 +20,8 @@ export default async function Page({
     "help",
     "quiz",
     "learning",
+    "assignments",
+    "notes",
   ];
   if (page[0] && !["login", "register", ...roots].includes(page[0])) notFound();
   if (roots.includes(page[0])) {

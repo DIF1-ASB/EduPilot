@@ -25,6 +25,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { api } from "@/lib/client";
+import {AssignmentCreateForm} from '../assignments/teacher';
 import { subjects } from "@/lib/domain";
 import { useApp } from "../app-context";
 import {
@@ -363,41 +364,7 @@ export function ClassesPage({ id }: { id?: string }) {
             </GlassCard>
             <GlassCard>
               <h2>Новое задание</h2>
-              {materials.length ? (
-                <form
-                  onSubmit={(e) =>
-                    submit(e, async (f) => {
-                      await api(`classes/${id}/assignment`, "POST", {
-                        title: f.get("title"),
-                        materialId: f.get("materialId"),
-                        dueDate: f.get("dueDate") || undefined,
-                      });
-                      toast.success("Задание выдано");
-                    })
-                  }
-                >
-                  <Field label="Название задания">
-                    <input name="title" required maxLength={200} />
-                  </Field>
-                  <Field label="Материал">
-                    <select name="materialId">
-                      {materials.map((m) => (
-                        <option key={m.id} value={m.id}>
-                          {m.title}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                  <Field label="Срок сдачи">
-                    <input name="dueDate" type="datetime-local" />
-                  </Field>
-                  <GradientButton>
-                    Выдать задание <Send size={15} />
-                  </GradientButton>
-                </form>
-              ) : (
-                <p className="muted">Сначала создайте учебный материал.</p>
-              )}
+              <AssignmentCreateForm classId={id!} materials={materials} onCreated={()=>void load()}/>
             </GlassCard>
           </div>
           {grades.length > 0 && (
@@ -458,129 +425,7 @@ export function ClassesPage({ id }: { id?: string }) {
         <h2>Задания класса</h2>
       </div>
       {school.assignments.length ? (
-        school.assignments.map((a: any) => (
-          <GlassCard key={a.id} className="assignment-card">
-            <div className="section-heading">
-              <div>
-                <h2>{a.title}</h2>
-                <p>
-                  {a.dueDate
-                    ? "До " + new Date(a.dueDate).toLocaleString("ru-RU")
-                    : "Без срока сдачи"}
-                </p>
-              </div>
-              <div className="button-row">
-                <button
-                  className="button secondary"
-                  onClick={() => navigate("/materials/" + a.materialId)}
-                >
-                  Материал <ArrowRight size={14} />
-                </button>
-                {!teacher && (
-                  <button
-                    className="button secondary"
-                    onClick={() => navigate("/quiz/" + a.materialId)}
-                  >
-                    Пройти тест
-                  </button>
-                )}
-              </div>
-            </div>
-            {teacher ? (
-              a.submissions.length ? (
-                a.submissions.map((s: any) => (
-                  <div className="submission" key={s.id}>
-                    <h3>
-                      {s.student.firstName} {s.student.lastName}
-                    </h3>
-                    <p className="submission-text">{s.contentJson.text}</p>
-                    <form
-                      onSubmit={(e) =>
-                        submit(e, async (f) => {
-                          await api(`classes/${id}/grade`, "POST", {
-                            submissionId: s.id,
-                            score: Number(f.get("score")),
-                            maxScore: Number(f.get("maxScore")),
-                            teacherComment: f.get("teacherComment"),
-                          });
-                          toast.success("Оценка подтверждена и сохранена");
-                        })
-                      }
-                    >
-                      <div className="form-grid">
-                        <Field label="Балл">
-                          <input
-                            type="number"
-                            name="score"
-                            min={0}
-                            defaultValue={s.grade?.score || 0}
-                            required
-                          />
-                        </Field>
-                        <Field label="Максимум">
-                          <input
-                            type="number"
-                            name="maxScore"
-                            min={1}
-                            max={1000}
-                            defaultValue={s.grade?.maxScore || 10}
-                            required
-                          />
-                        </Field>
-                      </div>
-                      <Field label="Комментарий">
-                        <input
-                          name="teacherComment"
-                          defaultValue={s.grade?.teacherComment || ""}
-                        />
-                      </Field>
-                      <button className="button secondary">
-                        Подтвердить оценку
-                      </button>
-                    </form>
-                  </div>
-                ))
-              ) : (
-                <p className="muted">Работ на проверку пока нет.</p>
-              )
-            ) : (
-              <>
-                <form
-                  onSubmit={(e) =>
-                    submit(e, async (f) => {
-                      await api(`classes/${id}/submit`, "POST", {
-                        assignmentId: a.id,
-                        text: f.get("text"),
-                      });
-                      toast.success("Работа сдана");
-                    })
-                  }
-                >
-                  <Field label="Ваш ответ">
-                    <textarea
-                      name="text"
-                      required
-                      maxLength={20000}
-                      defaultValue={a.submissions[0]?.contentJson.text || ""}
-                      rows={5}
-                    />
-                  </Field>
-                  <GradientButton>
-                    Отправить работу <Send size={14} />
-                  </GradientButton>
-                </form>
-                {a.submissions[0]?.grade && (
-                  <div className="grade-result">
-                    <h3>
-                      Оценка: {a.submissions[0].grade.score} /{" "}
-                      {a.submissions[0].grade.maxScore}
-                    </h3>
-                    <p>{a.submissions[0].grade.teacherComment}</p>
-                  </div>
-                )}
-              </>
-            )}
-          </GlassCard>
+        school.assignments.map((a:any)=>(<GlassCard key={a.id} className="assignment-card"><h2>{a.title}</h2><p>{a.kind==='test'?'Контрольная':'Домашнее задание'} · {a.policy?.dueDate?new Date(a.policy.dueDate).toLocaleString('ru-RU'):'Без срока сдачи'}</p><button className="button primary" onClick={()=>navigate('/assignments/'+a.id)}>Открыть задание {a.title}</button></GlassCard>
         ))
       ) : (
         <GlassCard>

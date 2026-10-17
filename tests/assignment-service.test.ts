@@ -41,6 +41,7 @@ describe('assignment ownership and snapshots',()=>{
   expect(first.id).toBe(second.id);expect(second.text).toBe('Исправление');
   await expect(service.submitHomework(f.outsider,a.id,{text:'Чужой'})).rejects.toMatchObject({status:404});
   const view=await service.readAssignment(f.student,a.id);expect(JSON.stringify(view)).not.toContain('PRIVATE_HOMEWORK');
+  expect((await service.readAssignment(f.teacher,a.id) as any).submissions[0].studentName).toBe('student Synthetic');
   await f.client.grade.create({data:{submissionId:second.id,score:1,maxScore:2,teacherComment:'Проверено',approvedAt:new Date()}});
   await expect(service.submitHomework(f.student,a.id,{text:'Позднее'})).rejects.toMatchObject({status:409});
   const test=await service.createAssignment(f.teacher,classId,{...createInput(),materialVersion:2});

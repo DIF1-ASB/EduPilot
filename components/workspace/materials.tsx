@@ -29,6 +29,7 @@ import {
 import { api } from "@/lib/client";
 import { materialSections } from '@/lib/materials/content';
 import {AssessmentEditor,convertLegacyAssessment} from '../assessment/editor';
+import {AssignedQuizPage} from '../assignments/list';
 import { slidePalette } from "@/lib/slide-theme";
 import {
   subjects,
@@ -532,7 +533,7 @@ export function ToolPage({ type }: { type: ToolType }) {
   );
 }
 export function MaterialsPage() {
-  const { navigate } = useApp();
+  const { navigate,user } = useApp();
   const [items, setItems] = useState<MaterialRecord[] | null>(null);
   const [search, setSearch] = useState("");
   const [type, setType] = useState("");
@@ -568,9 +569,9 @@ export function MaterialsPage() {
           <h1>Мои материалы</h1>
           <p>Всё, что вы создали. Всё, к чему хочется вернуться.</p>
         </div>
-        <GradientButton onClick={() => navigate("/tools/lesson")}>
+        <GradientButton onClick={() => navigate(user.role==='student'?'/notes/new':"/tools/lesson")}>
           <Plus size={17} />
-          Новый материал
+          {user.role==='student'?'Создать конспект':'Новый материал'}
         </GradientButton>
       </header>
       <div className="filters">
@@ -636,9 +637,9 @@ export function MaterialsPage() {
             action={
               <button
                 className="button primary"
-                onClick={() => navigate("/tools/lesson")}
+                onClick={() => navigate(user.role==='student'?'/notes/new':"/tools/lesson")}
               >
-                Создать материал
+                {user.role==='student'?'Создать конспект':'Создать материал'}
               </button>
             }
           />
@@ -677,6 +678,7 @@ export function MaterialsPage() {
                 <button
                   className="icon-button"
                   title="Переименовать"
+                  disabled={m.canEdit===false}
                   onClick={async () => {
                     const title = prompt("Название материала", m.title);
                     if (title?.trim())
@@ -693,7 +695,7 @@ export function MaterialsPage() {
                 >
                   <FileText size={15} />
                 </button>
-                {isCreationEnabled(m.type) && <button
+                {isCreationEnabled(m.type)&&m.canEdit!==false && <button
                   className="icon-button"
                   title="Создать копию"
                   onClick={async () => {
@@ -711,6 +713,7 @@ export function MaterialsPage() {
                 <button
                   className="icon-button danger"
                   title="Удалить материал"
+                  disabled={m.canEdit===false}
                   onClick={async () => {
                     if (
                       confirm(
@@ -740,6 +743,7 @@ export function MaterialEditor({ id }: { id: string }) {
   const { user, navigate } = useApp();
   const [material, setMaterial] = useState<MaterialRecord | null>(null);
   const [error, setError] = useState("");
+  const [assignmentRefs,setAssignmentRefs]=useState<{id:string,title:string,kind:string}[]|null>(null);
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [answers, setAnswers] = useState(false);
@@ -754,6 +758,8 @@ export function MaterialEditor({ id }: { id: string }) {
   useEffect(() => {
     api<MaterialRecord>("materials/" + id)
       .then((m) => {
+        const refs=(m as any).assignments as {id:string,title:string,kind:string}[]|undefined;
+        if(refs){if(refs.length===1)navigate('/assignments/'+refs[0].id);else setAssignmentRefs(refs);return;}
         setMaterial(m);
         current.current = m;
       })
@@ -827,6 +833,7 @@ export function MaterialEditor({ id }: { id: string }) {
     }, seconds * 1000);
     return () => clearTimeout(t);
   }, [scenePlaying, selected]);
+  if(assignmentRefs)return <AnimatedPage><header className="page-heading"><h1>Выберите назначение</h1></header>{assignmentRefs.map(a=><GlassCard key={a.id}><h2>{a.title}</h2><button className="button primary" onClick={()=>navigate('/assignments/'+a.id)}>Открыть назначение {a.title}</button></GlassCard>)}</AnimatedPage>;
   if (error)
     return (
       <p className="form-error" role="alert">
@@ -1424,138 +1431,4 @@ export function MaterialEditor({ id }: { id: string }) {
     </AnimatedPage>
   );
 }
-export function QuizPage({ id }: { id: string }) {
-  const [material, setMaterial] = useState<MaterialRecord | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [result, setResult] = useState<any>(null);
-  const [quiz, setQuiz] = useState<any>(null);
-  const [seconds, setSeconds] = useState(0);
-  const [error, setError] = useState("");
-  const [history, setHistory] = useState<any[]>([]);
-  useEffect(() => {
-    api<MaterialRecord>("materials/" + id)
-      .then((m) => {
-        setMaterial(m);
-        if (m.type !== "test")
-          throw new Error("Этот материал не является тестом.");
-        api(`materials/${id}/quiz-start`, "POST", {})
-          .then((q) => {
-            setQuiz(q);
-            setSeconds(
-              Math.max(
-                0,
-                Math.floor(
-                  (new Date(q.expiresAt).getTime() - Date.now()) / 1000,
-                ),
-              ),
-            );
-          })
-          .catch((e) => setError(e.message));
-      })
-      .catch((e) => setError(e.message));
-    api("attempts")
-      .then(setHistory)
-      .catch((e) => setError(e.message));
-  }, [id]);
-  useEffect(() => {
-    if (!material || result) return;
-    const t = setInterval(
-      () =>
-        setSeconds(() =>
-          Math.max(
-            0,
-            Math.floor(
-              (new Date(quiz?.expiresAt || 0).getTime() - Date.now()) / 1000,
-            ),
-          ),
-        ),
-      1000,
-    );
-    return () => clearInterval(t);
-  }, [material, result, quiz]);
-  if (error) return <p className="form-error">{error}</p>;
-  if (!material) return <div className="skeleton-list" />;
-  return (
-    <AnimatedPage>
-      <header className="page-heading">
-        <span className="eyebrow">ПРОВЕРКА ЗНАНИЙ</span>
-        <h1>{material.title}</h1>
-        <p>
-          <Clock size={15} /> Осталось {Math.floor(seconds / 60)}:
-          {String(seconds % 60).padStart(2, "0")}
-        </p>
-      </header>
-      {result ? (
-        <GlassCard>
-          <h2>
-            Результат: {result.score} / {result.maxScore}
-          </h2>
-          {result.result.map((r: any, i: number) => (
-            <p key={r.id}>
-              {i + 1}. {r.correct ? "Верно" : "Ошибка"} · Правильный ответ:{" "}
-              {r.answer}
-            </p>
-          ))}
-        </GlassCard>
-      ) : (
-        <form
-          onSubmit={async (e) => {
-            e.preventDefault();
-            try {
-              setResult(
-                await api(`materials/${id}/quiz`, "POST", {
-                  answers,
-                  sessionId: quiz?.sessionId,
-                }),
-              );
-            } catch (e) {
-              toast.error((e as Error).message);
-            }
-          }}
-        >
-          {materialSections(material.contentJson).sections.map((s, i) => (
-            <GlassCard key={s.id} className="quiz-question">
-              <h2>{s.title}</h2>
-              <p>{s.body}</p>
-              {s.options?.length ? (
-                s.options.map((o) => (
-                  <label className="check-field" key={o}>
-                    <input
-                      type="radio"
-                      name={s.id}
-                      value={o}
-                      checked={answers[s.id] === o}
-                      onChange={() => setAnswers({ ...answers, [s.id]: o })}
-                    />
-                    {o}
-                  </label>
-                ))
-              ) : (
-                <Field label="Ваш ответ">
-                  <input
-                    value={answers[s.id] || ""}
-                    onChange={(e) =>
-                      setAnswers({ ...answers, [s.id]: e.target.value })
-                    }
-                  />
-                </Field>
-              )}
-            </GlassCard>
-          ))}
-          <GradientButton disabled={!seconds}>Завершить тест</GradientButton>
-        </form>
-      )}
-      <h2 className="section-space">История попыток</h2>
-      {history.length ? (
-        history.map((a) => (
-          <p key={a.id}>
-            {a.material.title}: {a.score} баллов ·{" "}
-            {new Date(a.createdAt).toLocaleString("ru-RU")}
-          </p>
-        ))
-      ) : (
-        <p className="muted">Вы ещё не проходили тесты.</p>
-      )}
-    </AnimatedPage>
-  );
-}
+export function QuizPage({id}:{id:string}) { return <AssignedQuizPage materialId={id}/>; }

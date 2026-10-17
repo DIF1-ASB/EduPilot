@@ -13,7 +13,7 @@ const createSchema=assignmentPolicySchema.extend({materialId:z.string().min(1),t
 function parse<T>(schema:z.ZodType<T,any,any>,raw:unknown):T {const r=schema.safeParse(raw);if(!r.success)fail(400,r.error.issues.map(i=>i.message).join('; '));return r.data;}
 export function validatePolicy(policy:{answerPolicy:string,dueDate?:string|null}){if(policy.answerPolicy==='after_due'&&!policy.dueDate)fail(400,'Для раскрытия после срока нужен дедлайн.');}
 export const assignmentInclude={class:{include:{teacher:{select:{firstName:true,lastName:true}},enrollments:{select:{studentId:true}}}},material:true,
- submissions:{include:{grade:true}},assessmentAttempts:{include:{student:{select:{firstName:true,lastName:true}}}}} satisfies Prisma.AssignmentInclude;
+ submissions:{include:{grade:true,student:{select:{firstName:true,lastName:true}}}},assessmentAttempts:{include:{student:{select:{firstName:true,lastName:true}}}}} satisfies Prisma.AssignmentInclude;
 export type AssignmentRow=Prisma.AssignmentGetPayload<{include:typeof assignmentInclude}>;
 export async function authorizedAssignment(actor:Actor,id:string):Promise<AssignmentRow>{
  const row=await (await db()).assignment.findUnique({where:{id},include:assignmentInclude});
@@ -23,14 +23,14 @@ export async function authorizedAssignment(actor:Actor,id:string):Promise<Assign
 export function assignmentPolicy(row:AssignmentRow):AssignmentPolicy{return {maxAttempts:row.maxAttempts,durationMinutes:row.durationMinutes,answerPolicy:row.answerPolicy as AssignmentPolicy['answerPolicy'],dueDate:row.dueDate?.toISOString()??null};}
 export function toSubmission(row:AssignmentRow['submissions'][number]):SubmissionDTO {
  const content=row.contentJson as {text?:unknown};
- return {id:row.id,assignmentId:row.assignmentId,studentId:row.studentId,text:typeof content?.text==='string'?content.text:'',submittedAt:row.submittedAt.toISOString(),
+ return {id:row.id,assignmentId:row.assignmentId,studentId:row.studentId,studentName:row.student.firstName+' '+row.student.lastName,text:typeof content?.text==='string'?content.text:'',submittedAt:row.submittedAt.toISOString(),
  grade:row.grade?{score:row.grade.score,maxScore:row.grade.maxScore,teacherComment:row.grade.teacherComment,approvedAt:row.grade.approvedAt.toISOString()}:null};
 }
 export function toAssignment(actor:Actor,row:AssignmentRow):AssignmentStudentDTO|TeacherAssignmentDTO{
  const kind=row.kind as 'homework'|'test',policy=assignmentPolicy(row);
  if(actor.role==='teacher')return {id:row.id,kind,title:row.title,classId:row.classId,className:row.class.name,materialId:row.materialId,materialVersion:row.materialVersion,
   policy,version:row.version,snapshot:row.snapshotJson?parseMaterialContent(row.snapshotJson):null,solutionsReleasedAt:row.solutionsReleasedAt?.toISOString()??null,disclosureLockedAt:row.disclosureLockedAt?.toISOString()??null,closedAt:row.closedAt?.toISOString()??null,
-  submissions:row.submissions.map(toSubmission),attempts:row.assessmentAttempts.map(a=>({id:a.id,studentId:a.studentId,studentName:a.student.firstName+' '+a.student.lastName,number:a.number,status:a.status}))};
+  submissions:row.submissions.map(toSubmission),attempts:row.assessmentAttempts.map(a=>{const result=a.resultJson as {score?:number,maxScore?:number}|null;return {id:a.id,studentId:a.studentId,studentName:a.student.firstName+' '+a.student.lastName,number:a.number,status:a.status,score:a.status==='graded'&&typeof result?.score==='number'?result.score:null,maxScore:typeof result?.maxScore==='number'?result.maxScore:null};})};
  const attempts=row.assessmentAttempts.filter(a=>a.studentId===actor.id);
  const scores=attempts.filter(a=>a.status==='graded').map(a=>(a.resultJson as {score?:number}|null)?.score).filter((v):v is number=>typeof v==='number');
  const content=kind==='homework'?materialSections(parseMaterialContent(row.snapshotJson??row.material.contentJson),false):undefined;
@@ -84,7 +84,7 @@ export async function submitHomework(actor:Actor,id:string,raw:unknown):Promise<
  ON CONFLICT(assignmentId,studentId) DO UPDATE SET contentJson=excluded.contentJson,submittedAt=excluded.submittedAt
  WHERE NOT EXISTS(SELECT 1 FROM Grade g WHERE g.submissionId=Submission.id)`,submissionId,actor.id,JSON.stringify({text:input.text}),now.toISOString().replace('Z','+00:00'),actor.id,id,row.version,now.getTime(),actor.id);
  if(!changed)fail(409,'Задание изменено или уже оценено.');
- const result=await client.submission.findUniqueOrThrow({where:{assignmentId_studentId:{assignmentId:id,studentId:actor.id}},include:{grade:true}});
+ const result=await client.submission.findUniqueOrThrow({where:{assignmentId_studentId:{assignmentId:id,studentId:actor.id}},include:{grade:true,student:{select:{firstName:true,lastName:true}}}});
  return toSubmission(result);
 }
 export async function updateAssignment(actor:Actor,id:string,raw:unknown):Promise<TeacherAssignmentDTO>{

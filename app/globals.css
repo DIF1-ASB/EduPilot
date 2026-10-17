@@ -3184,3 +3184,15 @@ b {
 @media(max-width:1100px) { .learning-stats { grid-template-columns: repeat(2,minmax(0,1fr)); } .learning-library-layout { grid-template-columns: 1fr; } }
 @media(max-width:760px) { .learning-intro-grid, .learning-training-grid, .learning-two-columns, .learning-charts { grid-template-columns: 1fr; } .learning-card { padding: 20px; } .learning-roadmap { display: none; } .learning-library-create { grid-template-columns: 1fr; } .learning-stats { gap: 10px; } .learning-stat { padding: 16px; } .learning-stat strong { font-size: 25px; } .learning-stat span { font-size: 12px; } .learning-tabs button { padding: 9px 12px; font-size: 12px; } .learning-feedback { padding: 16px; } .learning-session-item { padding: 13px; } }
 @media(max-width:420px) { .learning-form-grid { grid-template-columns: 1fr; } .learning-stat strong { font-size: 22px; } .learning-row { gap: 10px; } }
+.assignment-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px; }
+.assignment-grid .glass-card, .student-question { min-width:0; overflow-wrap:anywhere; }
+.assessment-questions { display:grid; gap:24px; margin:24px 0; }
+.student-question { width:100%; padding:24px; }
+.student-question legend { max-width:100%; white-space:pre-wrap; font-size:17px; padding:0 8px; }
+.answer-option { display:flex; align-items:center; min-height:44px; gap:12px; }
+.answer-option input { flex:0 0 auto; }
+.student-question textarea, .student-question input[type=text] { width:100%; }
+.assessment-question { padding:20px; border:1px solid var(--border-glass); border-radius:12px; min-width:0; }
+.assessment-author input, .assessment-author textarea, .assessment-author select { max-width:100%; }
+.assessment-author .button-row { flex-wrap:wrap; }
+@media(max-width:760px) { .assignment-grid { grid-template-columns:1fr; } .student-question { padding:18px 14px; } .assessment-question { padding:14px; } }

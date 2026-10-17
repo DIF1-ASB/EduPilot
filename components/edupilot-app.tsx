@@ -48,6 +48,10 @@ import {
   Field,
 } from "./ui/edupilot";
 import { ChatComposer } from "./workspace/composer";
+const AssignmentsPage=dynamic(()=>import('./assignments/list').then(m=>m.AssignmentsPage));
+const AssignedQuizPage=dynamic(()=>import('./assignments/list').then(m=>m.AssignedQuizPage));
+const AssignmentPage=dynamic(()=>import('./assignments/detail').then(m=>m.AssignmentPage));
+const AttemptPage=dynamic(()=>import('./assignments/attempt').then(m=>m.AttemptPage));
 const ChatPage = dynamic(() =>
   import("./workspace/chat").then((m) => m.ChatPage),
 );
@@ -173,13 +177,16 @@ export function EduPilot() {
       );
   } else if (path === "/" || path === "/workspace")
     content = <Dashboard view={view} onBackground={() => setBgOpen(!bgOpen)} />;
+  else if(path==='/assignments/homework'||path==='/assignments/tests')content=<AssignmentsPage kind={path.endsWith('tests')?'test':'homework'}/>;
+  else if(path.startsWith('/assignments/')){const [, ,assignmentId,attempts,attemptId]=path.split('/');content=attempts==='attempts'&&attemptId?<AttemptPage key={assignmentId+':'+attemptId} assignmentId={assignmentId} attemptId={attemptId}/>:<AssignmentPage key={assignmentId} id={assignmentId}/>;}
+  else if(path==='/notes/new')content=<ToolPage type="notes"/>;
   else if (path.startsWith("/tools/"))
     content = <ToolPage type={path.split("/")[2] as ToolType} />;
   else if (path === "/materials") content = <MaterialsPage />;
   else if (path.startsWith("/materials/"))
-    content = <MaterialEditor id={path.split("/")[2]} />;
+    content = <MaterialEditor key={path} id={path.split("/")[2]} />;
   else if (path.startsWith("/quiz/"))
-    content = <QuizPage id={path.split("/")[2]} />;
+    content = session.user.role==='teacher'?<MaterialEditor id={path.split('/')[2]}/>:<AssignedQuizPage materialId={path.split('/')[2]}/>;
   else if (path.startsWith("/chat"))
     content = <ChatPage id={path.split("/")[2]} />;
   else if (path.startsWith("/classes"))
@@ -366,7 +373,7 @@ export function GlassSidebar({
             icon: BookOpen,
           },
           {
-            path: "/chat?prompt=Помоги с домашним заданием",
+            path: "/assignments/homework",
             label: "Домашнее задание",
             icon: FileText,
           },
@@ -375,14 +382,15 @@ export function GlassSidebar({
             label: "Подготовка к экзаменам",
             icon: GraduationCap,
           },
-          { path: "/tools/notes", label: "Создать конспект", icon: BookOpen },
+          { path: "/notes/new", label: "Создать конспект", icon: BookOpen },
           {
-            path: "/materials",
+            path: "/assignments/tests",
             label: "Проверить знания",
             icon: ClipboardCheck,
           },
         ]),
     { path: "/materials", label: "Мои материалы", icon: FolderOpen },
+    ...(user.role==='teacher'?[{path:'/assignments/homework',label:'Домашние задания',icon:FileText},{path:'/assignments/tests',label:'Контрольные',icon:ClipboardCheck}]:[]),
     { path: "/learning", label: "Учебная траектория", icon: GraduationCap },
     { path: "/learning/progress", label: "Мой прогресс", icon: Activity },
     ...(user.role === "teacher" ? [
@@ -556,7 +564,7 @@ function Dashboard({
             </p>
           </div>
           <span className="section-count">
-            {view === "teacher" ? "04 ИНСТРУМЕНТА" : "03 ИНСТРУМЕНТА"}
+            {view === "teacher" ? "04 ИНСТРУМЕНТА" : "ЛИЧНЫЙ КОНСПЕКТ"}
           </span>
         </div>
         <div className="tool-grid">
@@ -569,9 +577,6 @@ function Dashboard({
                   description: "Главное — на одной странице",
                   color: "mint",
                 },
-                ...tools.filter((x) =>
-                  ["worksheet", "test"].includes(x.type),
-                ),
               ]
           ).map((t) => (
             <ToolCard key={t.type} {...t} />
@@ -624,7 +629,7 @@ function Dashboard({
             </div>
             <button
               className="button secondary"
-              onClick={() => navigate("/tools/lesson")}
+              onClick={() => navigate(view==='teacher'?"/tools/lesson":"/notes/new")}
             >
               Создать материал <Plus size={15} />
             </button>
@@ -645,7 +650,7 @@ export function ToolCard({ type, icon: Icon, description, color }: any) {
   return (
     <button
       className={`tool-card ${color}`}
-      onClick={() => navigate("/tools/" + type)}
+      onClick={() => navigate(type==='notes'?'/notes/new':"/tools/" + type)}
     >
       <span className="tool-icon">
         <Icon size={22} strokeWidth={1.6} />

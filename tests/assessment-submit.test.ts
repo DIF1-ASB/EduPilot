@@ -36,12 +36,14 @@ describe('durable attempt lifecycle',()=>{
   const {id,attempt:p}=await attempt();const pending=await s.submitAttempt(f.student,id,p.id,{version:1,answers:{q:'1/2',o:'Объяснение'}},clock);
   expect(pending).toMatchObject({status:'pending_review',resultJson:{score:null,autoScore:2,pendingQuestionIds:['o']}});
   expect((await a.readAssignment(f.student,id) as any).bestScore).toBeNull();
+  expect((await a.readAssignment(f.teacher,id) as any).attempts[0].score).toBeNull();
   await expect(s.reviewAttempt(f.student,id,p.id,{version:pending.version,marks:[{questionId:'o',points:3,comment:'X'}]})).rejects.toMatchObject({status:403});
   for(const marks of [[{questionId:'o',points:4,comment:''}],[{questionId:'q',points:2,comment:''}],[]])await expect(s.reviewAttempt(f.teacher,id,p.id,{version:pending.version,marks})).rejects.toMatchObject({status:400});
   const graded=await s.reviewAttempt(f.teacher,id,p.id,{version:pending.version,marks:[{questionId:'o',points:2,comment:'Нужен пример'}]});
   expect(graded).toMatchObject({status:'graded',resultJson:{score:4,maxScore:5}});
   await expect(s.reviewAttempt(f.teacher,id,p.id,{version:pending.version,marks:[{questionId:'o',points:0,comment:'Race'}]})).rejects.toMatchObject({status:409});
   expect((await a.readAssignment(f.student,id) as any).bestScore).toBe(4);
+  expect((await a.readAssignment(f.teacher,id) as any).attempts[0]).toMatchObject({score:4,maxScore:5});
  });
  it('admits only one concurrent review and one concurrent final answer',async()=>{
   const {id,attempt:p}=await attempt();
