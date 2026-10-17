@@ -348,7 +348,7 @@ describe("Критические операции EduPilot", () => {
     ).json();
     expect(list.some((m: any) => m.id === materialId)).toBe(true);
   });
-  it("ограничивает тест серверной сессией и не принимает повторную отправку", async () => {
+  it("предпросмотр не создаёт попытку, назначенная сдача идемпотентна, legacy запуск закрыт", async () => {
     const r = await call(
       "materials",
       "POST",
@@ -358,48 +358,41 @@ describe("Критические операции EduPilot", () => {
         subject: "Математика",
         grade: 5,
         contentJson: {
-          demo: false,
-          sections: [
-            {
-              id: "q1",
-              title: "Вопрос 1",
-              body: "2 + 2 = ?",
-              options: ["3", "4", "5"],
-              answer: "4",
-              points: 2,
-            },
-          ],
+          schemaVersion:2,kind:'assessment',demo:false,instructions:'Решите',variants:[{id:'v',label:'V',questions:[{id:'q1',kind:'single',prompt:'2+2=?',points:2,options:[{id:'a',label:'4'},{id:'b',label:'5'}],correctOptionIds:['a']}]}],
         },
       },
       teacher,
     );
     expect(r.status).toBe(201);
     const m: any = await r.json();
-    const q: any = await (
-      await call("materials/" + m.id + "/quiz-start", "POST", {}, teacher)
-    ).json();
+    const client=await db(),count=await client.assessmentAttempt.count();
+    expect((await call('materials/'+m.id,'GET',undefined,teacher)).status).toBe(200);
+    expect(await client.assessmentAttempt.count()).toBe(count);
+    const assigned:any=await(await call(`classes/${classId}/assignment`,'POST',{materialId:m.id,materialVersion:1,keysConfirmed:true,kind:'test',title:'Тест'},teacher)).json();
+    const q:any=await(await call(`assignments/${assigned.id}/start`,'POST',{requestId:crypto.randomUUID()},student)).json();
     const result = await call(
-      "materials/" + m.id + "/quiz",
+      `assignments/${assigned.id}/attempts/${q.id}/submit`,
       "POST",
-      { sessionId: q.sessionId, answers: { q1: "4" } },
-      teacher,
+      {version:1,answers:{q1:'a'}},
+      student,
     );
     expect(result.status).toBe(200);
-    expect(((await result.json()) as any).score).toBe(2);
+    expect(((await result.json()) as any).result.score).toBe(2);
     expect(
       (
         await call(
-          "materials/" + m.id + "/quiz",
+          `assignments/${assigned.id}/attempts/${q.id}/submit`,
           "POST",
-          { sessionId: q.sessionId, answers: { q1: "4" } },
-          teacher,
+          {version:1,answers:{q1:'b'}},
+          student,
         )
       ).status,
-    ).toBe(422);
+    ).toBe(200);
+    expect((await client.assessmentAttempt.findUniqueOrThrow({where:{id:q.id}})).resultJson).toMatchObject({score:2});
     expect(
       (await call("materials/" + m.id + "/quiz-start", "POST", {}, student))
         .status,
-    ).toBe(404);
+    ).toBe(410);
   });
   it("проверяет сигнатуру файла и изолирует приватное вложение", async () => {
     const invalid = new FormData();

@@ -14,6 +14,10 @@ function render(role: string, child: ReturnType<typeof createElement>) {
 }
 
 describe("Доступные действия кабинета", () => {
+  it.each(['lesson','worksheet','test','review'] as const)('не показывает ученику преподавательскую форму по URL %s',type=>{
+    const html=render('student',createElement(ToolPage,{type}));
+    expect(html).toContain('Доступно преподавателю');expect(html).not.toContain('<form');
+  });
   it.each(["teacher", "student"])("показывает меню настоящей роли %s без переключателя и создания медиа", (role) => {
     const html = render(role, createElement(GlassSidebar, { path: "/workspace", view: role === "teacher" ? "student" : "teacher" }));
     const buttons = [...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g)].map((m) => m[1].replace(/<[^>]*>/g, ""));

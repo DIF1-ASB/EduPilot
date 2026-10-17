@@ -115,6 +115,7 @@ export function ToolPage({ type }: { type: ToolType }) {
         action={<button className="button" onClick={() => navigate("/materials")}>Мои материалы</button>}
       />
     );
+  if(user.role==='student'&&type!=='notes')return <EmptyState icon={<FileText/>} title="Доступно преподавателю" description="Для личных заметок используйте отдельный конспект. Назначенные работы находятся в разделах заданий." action={<button className="button" onClick={()=>navigate('/notes/new')}>Создать конспект</button>}/>;
   const upload = async (file?: File) => {
     if (!file) return;
     if (files.length >= 5) {

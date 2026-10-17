@@ -21,7 +21,6 @@ import {
   passwordSchema,
   materialInput,
   generatorSchema,
-  documentSchema,
   withoutAnswers,
   isCreationEnabled,
   mediaCreationDisabledMessage,
@@ -31,6 +30,8 @@ import { storage } from "@/lib/storage";
 import { exportMaterial } from "@/lib/export";
 import { canCreateMaterial, canEditMaterial, type Actor } from '@/lib/materials/policy';
 import { createAssignment, listAssignments, submitHomework } from '@/lib/assignments/service';
+import { handleAssignmentRequest } from '@/lib/assignments/http';
+import { toLegacyAttempt } from '@/lib/assessment/projection';
 export const dynamic = "force-dynamic";
 const json = (
   body: unknown,
@@ -116,6 +117,8 @@ async function handle(req: Request) {
     const user = await requireUser(req);
     const actor:Actor={id:user.id,role:user.role==='teacher'?'teacher':'student'};
     await rateLimit(`request:${user.id}`, 240, 60);
+    const assignmentResponse=await handleAssignmentRequest(req,actor);
+    if(assignmentResponse)return assignmentResponse;
     const teacher = () => {
       if (user.role !== "teacher") fail(403, "Доступно только преподавателям.");
     };
@@ -173,6 +176,7 @@ async function handle(req: Request) {
       });
     }
     if (area === "materials") {
+      if(method==='POST'&&['quiz','quiz-start'].includes(action))fail(410,'Самостоятельный запуск теста отключён. Откройте назначенную контрольную.');
       if (!id && method === "GET") {
         const materials = await client.material.findMany({
             where: { userId: user.id },
@@ -201,18 +205,20 @@ async function handle(req: Request) {
       const material = await client.material.findUnique({ where: { id } });
       if (!material) fail(404, "Материал не найден.");
       const own = material.userId === user.id;
+      let sharedAssignments:{id:string,title:string,kind:string}[]=[];
       if (!own) {
-        const assignment = await client.assignment.findFirst({
+        sharedAssignments = await client.assignment.findMany({
           where: {
             materialId: id,
             class: { enrollments: { some: { studentId: user.id } } },
-          },
+          },select:{id:true,title:true,kind:true},
         });
-        if (!assignment) fail(404, "Материал не найден.");
+        if (!sharedAssignments.length) fail(404, "Материал не найден.");
         if (method !== "GET" && !["quiz", "quiz-start"].includes(action))
           fail(403, "Материал доступен только для чтения.");
       }
       if (action === "export" && method === "GET") {
+        if(!own&&actor.role==='student')fail(409,'Откройте нужное назначение и скачайте доступный экземпляр там.');
         const format = new URL(req.url).searchParams.get("format") || "docx";
         if (!["docx", "pdf", "pptx"].includes(format))
           fail(400, "Неподдерживаемый формат.");
@@ -230,73 +236,6 @@ async function handle(req: Request) {
             "X-Content-Type-Options": "nosniff",
           },
         });
-      }
-      if (action === "quiz-start" && method === "POST") {
-        if (material.type !== "test")
-          fail(422, "Этот материал не является тестом.");
-        const meta = material.metadataJson as any;
-        const seconds = Math.min(
-          14400,
-          Math.max(300, Number(meta.duration || 45) * 60),
-        );
-        const session = await client.quizSession.create({
-          data: {
-            id: token(),
-            userId: user.id,
-            materialId: id,
-            expiresAt: new Date(Date.now() + seconds * 1000),
-          },
-        });
-        return json({ sessionId: session.id, expiresAt: session.expiresAt });
-      }
-      if (action === "quiz" && method === "POST") {
-        const body = z
-          .object({
-            answers: z.record(z.string().max(5000)),
-            sessionId: z.string(),
-          })
-          .parse(await readJson(req));
-        if (material.type !== "test") fail(422, "Материал не является тестом.");
-        const quiz = await client.quizSession.findFirst({
-          where: {
-            id: body.sessionId,
-            userId: user.id,
-            materialId: id,
-            usedAt: null,
-            expiresAt: { gt: new Date() },
-          },
-        });
-        if (!quiz) fail(422, "Попытка уже завершена или время теста истекло.");
-        const content = documentSchema.parse(material.contentJson);
-        const sections = content.sections.filter((x) => x.answer);
-        if (!sections.length) fail(422, "У теста пока нет ключей ответов.");
-        const result = sections.map((s) => ({
-          id: s.id,
-          correct:
-            (body.answers[s.id] || "").trim().toLowerCase() ===
-            (s.answer || "").trim().toLowerCase(),
-          answer: s.answer,
-          points: s.points || 1,
-        }));
-        const maxScore = result.reduce((a, s) => a + s.points, 0);
-        const score = result.reduce(
-          (a, s) => a + (s.correct ? s.points : 0),
-          0,
-        );
-        const consumed = await client.quizSession.updateMany({
-          where: { id: quiz.id, usedAt: null, expiresAt: { gt: new Date() } },
-          data: { usedAt: new Date() },
-        });
-        if (!consumed.count) fail(409, "Попытка уже завершена.");
-        await client.quizAttempt.create({
-          data: {
-            userId: user.id,
-            materialId: id,
-            score,
-            answersJson: { answers: body.answers, result, maxScore } as any,
-          },
-        });
-        return json({ result, score, maxScore });
       }
       if (action === "duplicate" && method === "POST") {
         if (!own) fail(403, "Нет доступа.");
@@ -317,6 +256,8 @@ async function handle(req: Request) {
           201,
         );
       }
+      if(method==='GET'&&!own&&actor.role==='student')return json({id:material.id,title:material.title,type:material.type,subject:material.subject,grade:material.grade,version:material.version,status:material.status,canEdit:false,metadataJson:{},
+        assignments:sharedAssignments,contentJson:{demo:false,sections:[{id:'assignment-reference',title:'Назначенный материал',body:'Откройте назначение, чтобы увидеть актуальные условия и доступные действия.'}]}});
       if (method === "GET")
         return json({
           ...((own && (actor.role==='teacher'||material.type==='notes')) ? material : withoutAnswers(material)),
@@ -768,11 +709,11 @@ async function handle(req: Request) {
     }
     if (area === "attempts" && method === "GET")
       return json(
-        await client.quizAttempt.findMany({
+        (await client.quizAttempt.findMany({
           where: { userId: user.id },
           include: { material: { select: { title: true } } },
           orderBy: { createdAt: "desc" },
-        }),
+        })).map(toLegacyAttempt),
       );
     fail(404, "Маршрут не найден.");
   } catch (error) {
