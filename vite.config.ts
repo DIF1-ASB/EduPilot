@@ -54,7 +54,7 @@ export default defineConfig(async ({ command }) => {
   const { cloudflare } = await import("@cloudflare/vite-plugin");
 
   return {
-    resolve: {alias: [{find:'@local-db',replacement:fileURLToPath(new URL('./lib/local-database-cloud.ts',import.meta.url))},{find:/^@prisma\/client$/,replacement:fileURLToPath(new URL('./node_modules/.prisma/client/wasm.js',import.meta.url))}]},
+    resolve: {alias: [{find:'@assessment-local-store',replacement:fileURLToPath(new URL('./lib/assessment/local-store-cloud.ts',import.meta.url))},{find:'@local-db',replacement:fileURLToPath(new URL('./lib/local-database-cloud.ts',import.meta.url))},{find:/^@prisma\/client$/,replacement:fileURLToPath(new URL('./node_modules/.prisma/client/wasm.js',import.meta.url))}]},
     server: {
       ...(managedLinux
         ? { host: "0.0.0.0", allowedHosts: ["terminal.local"] }
