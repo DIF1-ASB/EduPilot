@@ -6,6 +6,7 @@ import { validateAssessment } from '../assessment/schema';
 import type { Actor } from '../materials/policy';
 import type { AssignmentPolicy,AssignmentStudentDTO,TeacherAssignmentDTO,SubmissionDTO } from './contracts';
 import type { Prisma } from '@prisma/client';
+import {runAssessmentBatch,epochSql,sqlDate} from '../assessment/store';
 const due=z.string().datetime({offset:true}).nullable().optional();
 export const assignmentPolicySchema=z.object({maxAttempts:z.number().int().min(1).max(10).default(1),durationMinutes:z.number().int().min(5).max(240).default(45),answerPolicy:z.enum(['manual','after_due','after_last']).default('manual'),dueDate:due});
 const createSchema=assignmentPolicySchema.extend({materialId:z.string().min(1),title:z.string().trim().min(1).max(200),kind:z.enum(['homework','test']).default('homework'),materialVersion:z.number().int().positive().optional(),keysConfirmed:z.boolean().default(false)});
@@ -85,4 +86,32 @@ export async function submitHomework(actor:Actor,id:string,raw:unknown):Promise<
  if(!changed)fail(409,'Задание изменено или уже оценено.');
  const result=await client.submission.findUniqueOrThrow({where:{assignmentId_studentId:{assignmentId:id,studentId:actor.id}},include:{grade:true}});
  return toSubmission(result);
+}
+export async function updateAssignment(actor:Actor,id:string,raw:unknown):Promise<TeacherAssignmentDTO>{
+ if(actor.role!=='teacher')fail(403,'Настройки меняет преподаватель.');
+ const input=parse(assignmentPolicySchema.partial().extend({version:z.number().int().positive(),title:z.string().trim().min(1).max(200).optional(),closed:z.boolean().optional()}).strict(),raw);
+ const row=await authorizedAssignment(actor,id);
+ const next={maxAttempts:input.maxAttempts??row.maxAttempts,durationMinutes:input.durationMinutes??row.durationMinutes,answerPolicy:input.answerPolicy??row.answerPolicy,dueDate:input.dueDate===undefined?row.dueDate?.toISOString()??null:input.dueDate};validatePolicy(next);
+ if(next.maxAttempts>row.maxAttempts&&(row.disclosureLockedAt||row.closedAt))fail(409,'После раскрытия решений или закрытия создайте новое назначение.');
+ if(input.closed===false&&row.solutionsReleasedAt)fail(409,'Опубликованные решения нельзя отозвать и открыть повторную сдачу.');
+ const closed=input.closed===true?(row.closedAt??new Date()):input.closed===false?null:row.closedAt;
+ const changed=await runAssessmentBatch([{sql:`UPDATE Assignment SET title=?,maxAttempts=?,durationMinutes=?,answerPolicy=?,dueDate=?,closedAt=?,version=version+1
+  WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM SchoolClass WHERE id=Assignment.classId AND teacherId=?)
+  AND (?<=maxAttempts OR (disclosureLockedAt IS NULL AND closedAt IS NULL))
+  AND (solutionsReleasedAt IS NULL OR ? IS NOT NULL)`,params:[input.title??row.title,next.maxAttempts,next.durationMinutes,next.answerPolicy,next.dueDate?sqlDate(new Date(next.dueDate)):null,closed?sqlDate(closed):null,id,input.version,actor.id,next.maxAttempts,closed?sqlDate(closed):null]}]);
+ if(!changed[0].changes)fail(409,'Настройки изменены или решения уже раскрыты.');
+ return await readAssignment(actor,id) as TeacherAssignmentDTO;
+}
+export async function releaseSolutions(actor:Actor,id:string,raw:unknown,clock:()=>Date=()=>new Date()):Promise<TeacherAssignmentDTO>{
+ if(actor.role!=='teacher')fail(403,'Решения публикует преподаватель.');
+ const {version}=parse(z.object({version:z.number().int().positive()}).strict(),raw),row=await authorizedAssignment(actor,id);
+ if(row.kind!=='test')fail(422,'Домашнее задание не имеет этой политики решений.');
+ const {expireAttempt}=await import('../assessment/service');
+ for(const active of row.assessmentAttempts.filter(a=>a.status==='in_progress'&&a.expiresAt<=clock()))await expireAttempt(actor,id,active.id,clock);
+ const now=clock();
+ const changed=await runAssessmentBatch([{sql:`UPDATE Assignment SET answerPolicy='manual',solutionsReleasedAt=COALESCE(solutionsReleasedAt,?),disclosureLockedAt=COALESCE(disclosureLockedAt,?),closedAt=COALESCE(closedAt,?),version=version+1
+  WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM SchoolClass WHERE id=Assignment.classId AND teacherId=?)
+  AND NOT EXISTS(SELECT 1 FROM AssessmentAttempt WHERE assignmentId=Assignment.id AND status='in_progress')`,params:[sqlDate(now),sqlDate(now),sqlDate(now),id,version,actor.id]}]);
+ if(!changed[0].changes)fail(409,'Есть активные попытки или настройки изменены. Дождитесь завершения и обновите страницу.');
+ return await readAssignment(actor,id) as TeacherAssignmentDTO;
 }

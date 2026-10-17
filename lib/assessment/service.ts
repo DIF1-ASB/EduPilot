@@ -6,6 +6,8 @@ import {authorizedAssignment,type AssignmentRow} from '../assignments/service';
 import {validateAssessment,validateAnswers,type AssessmentDocument} from './schema';
 import {buildAdmissionBatch,runAssessmentBatch,epochSql,sqlDate} from './store';
 import {gradeVariant,hasAnswers,type GradeResult} from './grading';
+import {canRevealSolutions,toStudentAttempt} from './projection';
+import type {AttemptDTO} from './public';
 import type {AssessmentAttempt} from '@prisma/client';
 export type Clock=()=>Date;
 export type PrivateAttempt=AssessmentAttempt&{assignment:AssignmentRow,snapshot:AssessmentDocument};
@@ -89,4 +91,25 @@ export async function reviewAttempt(actor:Actor,assignmentId:string,attemptId:st
   params:[JSON.stringify(reviewed),JSON.stringify(marks),sqlDate(now),attemptId,assignmentId,version,...guard.params]}]);
  if(!changed[0].changes)fail(409,'Другой запрос уже проверил эту работу.');
  return readPrivateAttempt(actor,assignmentId,attemptId);
+}
+export async function getStudentAttemptView(actor:Actor,assignmentId:string,attemptId:string,clock:Clock=()=>new Date()):Promise<AttemptDTO>{
+ if(actor.role!=='student')fail(403,'Ученический результат доступен ученику.');
+ const row=await authorizedAssignment(actor,assignmentId);
+ for(const active of row.assessmentAttempts.filter(a=>a.studentId===actor.id&&a.status==='in_progress'&&a.expiresAt<=clock()))await expireAttempt(actor,assignmentId,active.id,clock);
+ for(let retry=0;retry<2;retry++){
+  const attempt=await loadAttempt(actor,assignmentId,attemptId,clock),assignment=attempt.assignment,now=clock();
+  const used=assignment.assessmentAttempts.filter(a=>a.studentId===actor.id).length;
+  if(!canRevealSolutions(assignment,attempt,used,now))return toStudentAttempt(assignment,attempt,used,now);
+  const due=epochSql('Assignment.dueDate');
+  const gate=await runAssessmentBatch([{sql:`UPDATE Assignment SET disclosureLockedAt=COALESCE(disclosureLockedAt,?)
+   WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM Enrollment WHERE classId=Assignment.classId AND studentId=?)
+   AND EXISTS(SELECT 1 FROM AssessmentAttempt p WHERE p.id=? AND p.assignmentId=Assignment.id AND p.studentId=? AND p.status IN ('graded','pending_review'))
+   AND NOT EXISTS(SELECT 1 FROM AssessmentAttempt p WHERE p.assignmentId=Assignment.id AND p.studentId=? AND p.status='in_progress')
+   AND ((answerPolicy='manual' AND solutionsReleasedAt IS NOT NULL)
+    OR (answerPolicy='after_due' AND dueDate IS NOT NULL AND ${due}<=?)
+    OR (answerPolicy='after_last' AND (SELECT COUNT(*) FROM AssessmentAttempt p WHERE p.assignmentId=Assignment.id AND p.studentId=?)>=maxAttempts))`,
+   params:[sqlDate(now),assignmentId,assignment.version,actor.id,attemptId,actor.id,actor.id,now.getTime(),actor.id]}]);
+  if(gate[0].changes)return toStudentAttempt(assignment,attempt,used,now);
+ }
+ fail(409,'Настройки работы изменились. Обновите результат.');
 }
