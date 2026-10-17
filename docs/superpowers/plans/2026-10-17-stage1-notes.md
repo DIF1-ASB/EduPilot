@@ -36,7 +36,7 @@ Create `lib/notes/schema.ts`, `lib/notes/generation.ts`, `components/notes/form.
 - `validateNotes(input:unknown,{ready:boolean}):NotesDocument`, `createNotesDraft():NotesDocument`, `buildNotesMessages(input:NotesInput,invalidReply?:string):ConversationMessage[]`, `parseNotesReply(raw:string):NotesDocument`, `notesToSections(doc:NotesDocument):Section[]`.
 - `AIProvider.generateNotes(input:NotesInput):Promise<NotesDocument>` использует у Live существующий private request(messages,true). `NotesForm({onCreated})`, `NotesEditor({material,onSave})`, `NotesPreview({document})`.
 
-### N1. Контракт и генерация конспекта
+### Task 1: N1. Контракт и генерация конспекта
 
 **Files:** Schema/generation/content/domain/ai/API и `tests/notes-generation.test.ts` из карты выше.
 
@@ -48,7 +48,7 @@ Create `lib/notes/schema.ts`, `lib/notes/generation.ts`, `components/notes/form.
 - [ ] Повторить тесты; GREEN. Добавить fake replies для всех трёх объёмов и проверки отсутствия заявления об обработке вложения; это проверка сформированных инструкций/структуры, не гарантия предметной истинности любой live-модели. notesToSections даёт упорядоченные заголовки и самопроверку для существующего экспорта без duration.
 - [ ] Commit `feat: add dedicated notes contract and generation`.
 
-### N2. Профильная форма, ручной режим и совместимость
+### Task 2: N2. Профильная форма, ручной режим и совместимость
 
 **Files:** Компоненты notes, интеграции маршрутов/библиотеки/export, `tests/notes-ui.test.ts`, `e2e/notes.spec.ts`.
 

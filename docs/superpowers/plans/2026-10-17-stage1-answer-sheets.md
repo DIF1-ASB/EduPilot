@@ -36,7 +36,7 @@ Create `lib/assessment/sheet.ts`, `lib/assessment/export-docx.ts`, `lib/assessme
 - `buildAnswerSheet(material:MaterialRecord,{variantId?:string,includeTeacherKeys:boolean}):AnswerSheet`; raw input — только проверенный teacher snapshot/разрешённая ученическая проекция от HTTP. Для legacy blocks по sections, без преобразования исходного JSON.
 - `exportAnswerSheetDocx(sheet:AnswerSheet):Promise<Uint8Array>`, `exportAnswerSheetPdf(sheet:AnswerSheet):Promise<Uint8Array>`, `SheetPreview({sheet:AnswerSheet})`.
 
-### B1. Общая модель и предпросмотр
+### Task 1: B1. Общая модель и предпросмотр
 
 **Files:** sheet.ts, sheet-preview.tsx, editor/http/API, tests/answer-sheet.test.ts, app/globals.css.
 
@@ -48,7 +48,7 @@ Create `lib/assessment/sheet.ts`, `lib/assessment/export-docx.ts`, `lib/assessme
 - [ ] Повторить тест; GREEN. Изменение answerLines использует явное сохранение версии материала; само переключение предпросмотра ничего не пишет. TeacherKeys отделены визуально и структурно.
 - [ ] Commit `feat: add shared printable answer sheet model`.
 
-### B2. DOCX/PDF и визуальная приёмка
+### Task 2: B2. DOCX/PDF и визуальная приёмка
 
 **Files:** export-docx.ts/export-pdf.ts, lib/export.ts, tests/answer-sheet-export.test.ts, e2e/answer-sheet.spec.ts.
 

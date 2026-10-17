@@ -50,7 +50,7 @@
 
 Все новые тесты используют `tests/helpers/platform.ts`: `openPlatformFixture(name): Promise<PlatformFixture>` с `call(path,method,body,cookie)`, `teacher`, `student`, `outsider`, `client`, `close()`. До импорта приложения fixture задаёт уникальные временные DATABASE_URL/STORAGE_DIRECTORY и AI_MODE=mock, применяет все SQL-миграции; создаёт только синтетические записи. Не читает рабочую локальную или серверную базу.
 
-### A1. Схема заданий и совместимое чтение
+### Task 1: A1. Схема заданий и совместимое чтение
 
 **Files:** Create `lib/assessment/schema.ts`, `lib/materials/content.ts`, `tests/assessment-schema.test.ts`; Modify `lib/domain.ts`, typed-reader ветви в `components/workspace/materials.tsx`, `lib/export.ts`; Test `tests/platform.test.ts`.
 
@@ -62,7 +62,7 @@
 - [ ] Повторить команду плюс `tests/platform.test.ts`; ожидать GREEN и сохранение чтения/экспорта legacy. Для новых assessment экспорт до пакета B использует безопасную обычную текстовую проекцию без ключей ученику, не падает на отсутствии sections.
 - [ ] Commit `feat: add versioned assessment contracts and legacy readers` с только файлами задачи.
 
-### A2. Аддитивная миграция и тестовая база
+### Task 2: A2. Аддитивная миграция и тестовая база
 
 **Files:** Modify `prisma/schema.prisma`; Create `prisma/migrations/202610170001_assignments/migration.sql`, `tests/helpers/platform.ts`, `tests/assignment-migration.test.ts`; Generate `drizzle/0003_assignments.sql`, `drizzle/meta/_journal.json` существующим sync-скриптом.
 
@@ -74,7 +74,7 @@
 - [ ] Выполнить `node node_modules/prisma/build/index.js generate`, `node scripts/sync-cloud-migrations.mjs`, повторить тест; ожидать GREEN. Поля времени сериализовать согласованно с текущим Prisma adapter; тестировать чтение через Prisma и raw SQL, не смешивать ISO-text и epoch-ms молча.
 - [ ] Commit `feat: add additive assignment and attempt persistence` с миграцией, схемой, fixture и тестом. Ранее применённые SQL-файлы неизменны.
 
-### A3. Роли, назначения и домашние работы
+### Task 3: A3. Роли, назначения и домашние работы
 
 **Files:** Create `lib/materials/policy.ts`, `lib/assignments/contracts.ts`, `lib/assignments/service.ts`, `tests/material-policy.test.ts`, `tests/assignment-service.test.ts`; Modify `app/api/[...path]/route.ts`.
 
@@ -86,7 +86,7 @@
 - [ ] Повторить тесты; GREEN. Старые ученические teacher-only материалы доступны чтению/безопасному экспорту, но не изменению; старый тип запрещено менять PATCH-запросом. Доступ к материалам homework не даёт чтения чужих Submission.
 - [ ] Commit `feat: enforce material roles and assignment ownership`.
 
-### A4. Атомарный старт, возобновление и лимит
+### Task 4: A4. Атомарный старт, возобновление и лимит
 
 **Files:** Create `lib/assessment/store.ts`, `lib/assessment/local-store.ts`, `lib/assessment/service.ts`, `tests/assessment-start.test.ts`, `tests/assessment-d1.test.ts`.
 
@@ -98,7 +98,7 @@
 - [ ] Для local-store выполнять список в одной better-sqlite3 transaction().immediate(); для D1 — native prepared `.batch()`, без интерактивного Prisma `$transaction`. D1-документация: [batch](https://developers.cloudflare.com/d1/worker-api/d1-database/#batch) описывает rollback последовательности при ошибке; условные SQL-предикаты и индексы нужны независимо от этого. Повторить тесты, включая rollback после искусственной ошибки второго statement и проверку local/D1-параметров; ожидать GREEN. Mock D1 не считать доказательством реального параллелизма: запуск local Wrangler-контракта — интеграционный gate A10.
 - [ ] Commit `feat: make assessment admission atomic and idempotent`.
 
-### A5. Оценивание, черновик, сдача и ручная проверка
+### Task 5: A5. Оценивание, черновик, сдача и ручная проверка
 
 **Files:** Create `lib/assessment/grading.ts`, `tests/assessment-grading.test.ts`, `tests/assessment-submit.test.ts`; Modify `lib/assessment/service.ts`.
 
@@ -110,7 +110,7 @@
 - [ ] Повторить тесты; GREEN. Проверить потерянный HTTP-ответ, поздний autosave, refresh, stale version →409 без потери текущего ответа. Ручная оценка принимает только open-question ids и points 0..max; итог вычисляется сервером, конкурентные review не затираются. Лучший итог берётся только из graded.
 - [ ] Commit `feat: persist and grade assessment attempts safely`.
 
-### A6. Политики раскрытия, DTO и изменение настроек
+### Task 6: A6. Политики раскрытия, DTO и изменение настроек
 
 **Files:** Create `lib/assessment/projection.ts`, `lib/assessment/public.ts`, `tests/assessment-disclosure.test.ts`; Modify `lib/assignments/service.ts`, `lib/assessment/service.ts`.
 
@@ -123,7 +123,7 @@
 - [ ] Добавить и выполнить гонки release/start и раскрытие/update(maxAttempts): никто не стартует после ручного закрытия, увеличение не проходит после публикации, действующая неистёкшая попытка блокирует release 409. Изменения длительности/срока влияют только на новые попытки; уменьшение лимита не удаляет старые. GREEN.
 - [ ] Commit `feat: control solution disclosure across results and history`.
 
-### A7. HTTP-контракты и закрытие legacy-обходов
+### Task 7: A7. HTTP-контракты и закрытие legacy-обходов
 
 **Files:** Create `lib/assignments/http.ts`, `tests/assignment-api.test.ts`; Modify `app/api/[...path]/route.ts`, `tests/platform.test.ts`, `tests/creation-ui.test.ts`.
 
@@ -151,7 +151,7 @@
 - [ ] Повторить тесты; GREEN. Ошибки не содержат snapshot/private SQL/ключи. Нельзя подменить actor, studentId, score, expiresAt или variantId через body/query.
 - [ ] Commit `feat: expose assignment API and close legacy quiz bypasses`.
 
-### A8. Генератор и редактор контрольной преподавателя
+### Task 8: A8. Генератор и редактор контрольной преподавателя
 
 **Files:** Create `components/assessment/editor.tsx`, `lib/assessment/generation.ts`, `tests/assessment-generation.test.ts`, `tests/assessment-editor.test.ts`; Modify `lib/ai.ts`, `components/workspace/materials.tsx`.
 
@@ -163,7 +163,7 @@
 - [ ] Повторить тесты; GREEN. Teacher preview и редактор не создают реальный AssessmentAttempt. Не менять генерацию lesson/review сверх требуемого общего dispatch.
 - [ ] Commit `feat: author structured assessments with explicit keys`.
 
-### A9. Ученический и преподавательский интерфейсы назначений
+### Task 9: A9. Ученический и преподавательский интерфейсы назначений
 
 **Files:** Create `components/assignments/list.tsx`, `components/assignments/detail.tsx`, `components/assignments/attempt.tsx`, `components/assignments/teacher.tsx`, `components/assessment/question-input.tsx`, `e2e/assignments.spec.ts`; Modify `components/edupilot-app.tsx`, `components/workspace/classes.tsx`, `components/workspace/materials.tsx`, `app/[[...page]]/page.tsx`, `app/globals.css`.
 
@@ -175,7 +175,7 @@
 - [ ] Запустить `node node_modules/@playwright/test/cli.js test e2e/assignments.spec.ts` при EDUPILOT_TEST_URL локального тестового сервера; GREEN на desktop и 390×844, управление клавиатурой и подписанные inputs. Авторизованные /quiz/:materialId и /materials/:id ведут в правильный контур, не запускают обходную попытку.
 - [ ] Commit `feat: add role-specific homework and assessment screens`.
 
-### A10. Интеграционный gate пакета A
+### Task 10: A10. Интеграционный gate пакета A
 
 **Files:** Create `tests/assessment-concurrency.test.ts`, `scripts/verify-assessment-d1.mjs`; Modify необходимые `e2e/assignments.spec.ts`, `tests/assignment-api.test.ts`.
 
