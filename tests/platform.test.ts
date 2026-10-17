@@ -4,6 +4,7 @@ import Database from "better-sqlite3";
 import JSZip from "jszip";
 import { GET, POST, PATCH, DELETE } from "../app/api/[...path]/route";
 import { db } from "../lib/database";
+import { materialSections } from '../lib/materials/content';
 import {
   generatorSchema,
   template,
@@ -165,7 +166,7 @@ describe("Критические операции EduPilot", () => {
     const read = await call(`materials/${old.id}`, "GET", undefined, teacher);
     expect(read.status).toBe(200);
     const saved = await read.json() as MaterialRecord;
-    expect(saved.contentJson.sections[0].body).toBe("Сохранённый текст");
+    expect(materialSections(saved.contentJson).sections[0].body).toBe("Сохранённый текст");
     expect((await call(`materials/${old.id}`, "PATCH", { ...saved, title: "Исправленный материал" }, teacher)).status).toBe(200);
     expect((await call(`materials/${old.id}/export?format=pptx`, "GET", undefined, teacher)).status).toBe(200);
   });

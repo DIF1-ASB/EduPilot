@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { api } from "@/lib/client";
+import { materialSections } from '@/lib/materials/content';
 import { slidePalette } from "@/lib/slide-theme";
 import {
   subjects,
@@ -815,9 +816,10 @@ export function MaterialEditor({ id }: { id: string }) {
   }, []);
   useEffect(() => {
     if (!scenePlaying || !material) return;
-    const seconds = material.contentJson.sections[selected]?.duration || 5;
+    const playbackSections = materialSections(material.contentJson).sections;
+    const seconds = playbackSections[selected]?.duration || 5;
     const t = setTimeout(() => {
-      if (selected < material.contentJson.sections.length - 1)
+      if (selected < playbackSections.length - 1)
         setSelected(selected + 1);
       else setScenePlaying(false);
     }, seconds * 1000);
@@ -831,7 +833,16 @@ export function MaterialEditor({ id }: { id: string }) {
     );
   if (!material) return <div className="skeleton-list" />;
   const m = material;
-  const sections = m.contentJson.sections;
+  if ('schemaVersion' in m.contentJson) return (
+    <AnimatedPage><header className="page-heading"><h1>{m.title}</h1></header>
+      <GlassCard>{materialSections(m.contentJson, m.canEdit !== false).sections.map(s=>(
+        <section className="section-space" key={s.id}><h2>{s.title}</h2><p style={{whiteSpace:'pre-wrap'}}>{s.body}</p>
+          {s.options?.map((o,i)=><p key={i}>{o}</p>)}
+        </section>
+      ))}</GlassCard>
+    </AnimatedPage>
+  );
+  const sections = materialSections(m.contentJson, m.canEdit !== false).sections;
   const updateSections = (next: Section[]) =>
     change({ ...m, contentJson: { ...m.contentJson, sections: next } });
   const updateSection = (i: number, p: Partial<Section>) =>
@@ -1515,7 +1526,7 @@ export function QuizPage({ id }: { id: string }) {
             }
           }}
         >
-          {material.contentJson.sections.map((s, i) => (
+          {materialSections(material.contentJson).sections.map((s, i) => (
             <GlassCard key={s.id} className="quiz-question">
               <h2>{s.title}</h2>
               <p>{s.body}</p>

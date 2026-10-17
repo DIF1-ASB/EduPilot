@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { materialContentSchema, materialSections, parseMaterialContent, type MaterialContent } from './materials/content';
 export const toolTypes = [
   "lesson",
   "worksheet",
@@ -84,7 +85,7 @@ export const materialInput = z.object({
   type: z.enum(toolTypes),
   subject: z.string().min(1).max(100),
   grade: z.number().int().min(1).max(11),
-  contentJson: documentSchema,
+  contentJson: materialContentSchema,
   metadataJson: z.record(z.unknown()).default({}),
   status: z.enum(["draft", "ready"]).default("draft"),
   version: z.number().int().optional(),
@@ -121,7 +122,7 @@ export type MaterialRecord = {
   grade: number;
   status: string;
   version: number;
-  contentJson: DocumentContent;
+  contentJson: MaterialContent;
   metadataJson: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -251,7 +252,7 @@ export function template(p: GeneratorInput): DocumentContent {
 export function withoutAnswers<
   T extends { contentJson: unknown; metadataJson: unknown },
 >(m: T): T {
-  const c = documentSchema.parse(m.contentJson);
+  const c = materialSections(parseMaterialContent(m.contentJson), false);
   return {
     ...m,
     contentJson: {

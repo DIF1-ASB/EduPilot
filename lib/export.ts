@@ -17,6 +17,7 @@ import { getRuntime } from "./runtime";
 import { slidePalette } from "./slide-theme";
 import { db } from "./database";
 import { storage } from "./storage";
+import { materialSections, parseMaterialContent } from './materials/content';
 
 async function getImage(section: Section, ownerId: string) {
   if (!section.imageId) return null;
@@ -40,7 +41,7 @@ export async function exportMaterial(
   format: string,
   teacher: boolean,
 ) {
-  const data = documentSchema.parse(material.contentJson),
+  const data = materialSections(parseMaterialContent(material.contentJson), teacher),
     sections = data.sections,
     title = material.title;
   if (format === "docx") {
