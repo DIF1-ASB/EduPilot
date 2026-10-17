@@ -27,6 +27,8 @@ model User {
   quizSessions QuizSession[]
   trainings TrainingSession[]
   learningTasks LearningTask[]
+  assessmentAttempts AssessmentAttempt[]
+  assessmentStartRequests AssessmentStartRequest[]
 }
 model UserSettings {
   userId String @id
@@ -136,10 +138,59 @@ model Assignment {
   materialId String
   title String
   dueDate DateTime?
+  kind String @default("homework")
+  maxAttempts Int @default(1)
+  durationMinutes Int @default(45)
+  answerPolicy String @default("manual")
+  solutionsReleasedAt DateTime?
+  disclosureLockedAt DateTime?
+  closedAt DateTime?
+  version Int @default(1)
+  snapshotJson Json?
+  materialVersion Int?
   class SchoolClass @relation(fields:[classId],references:[id],onDelete:Cascade)
   material Material @relation(fields:[materialId],references:[id],onDelete:Restrict)
   submissions Submission[]
+  assessmentAttempts AssessmentAttempt[]
+  assessmentStartRequests AssessmentStartRequest[]
   @@index([classId])
+}
+model AssessmentAttempt {
+  id String @id @default(cuid())
+  assignmentId String
+  studentId String
+  number Int
+  startRequestId String
+  variantId String
+  startedAt DateTime
+  expiresAt DateTime
+  status String
+  version Int @default(1)
+  draftAnswersJson Json
+  submittedAnswersJson Json?
+  submittedAt DateTime?
+  completionKind String?
+  resultJson Json?
+  reviewJson Json?
+  reviewedAt DateTime?
+  assignment Assignment @relation(fields:[assignmentId],references:[id],onDelete:Cascade)
+  student User @relation(fields:[studentId],references:[id],onDelete:Cascade)
+  startRequests AssessmentStartRequest[]
+  @@unique([assignmentId,studentId,number])
+  @@unique([assignmentId,studentId,startRequestId])
+  @@index([studentId,assignmentId])
+}
+model AssessmentStartRequest {
+  assignmentId String
+  studentId String
+  requestId String
+  attemptId String
+  createdAt DateTime @default(now())
+  assignment Assignment @relation(fields:[assignmentId],references:[id],onDelete:Cascade)
+  student User @relation(fields:[studentId],references:[id],onDelete:Cascade)
+  attempt AssessmentAttempt @relation(fields:[attemptId],references:[id],onDelete:Cascade)
+  @@id([assignmentId,studentId,requestId])
+  @@index([attemptId])
 }
 model Submission {
   id String @id @default(cuid())

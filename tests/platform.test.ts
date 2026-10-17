@@ -63,18 +63,8 @@ async function create(role: string, email: string) {
 }
 beforeAll(() => {
   const database = new Database(file);
-  database.exec(
-    fs.readFileSync(
-      "prisma/migrations/202610150001_init/migration.sql",
-      "utf8",
-    ),
-  );
-  database.exec(
-    fs.readFileSync(
-      "prisma/migrations/202610150002_quiz_sessions/migration.sql",
-      "utf8",
-    ),
-  );
+  for(const name of fs.readdirSync('prisma/migrations').filter(n=>/^\d/.test(n)).sort())
+    database.exec(fs.readFileSync(`prisma/migrations/${name}/migration.sql`,'utf8'));
   database.close();
 });
 afterAll(async () => {

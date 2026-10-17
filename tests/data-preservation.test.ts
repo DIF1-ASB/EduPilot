@@ -40,6 +40,14 @@ function fixture(){
 }
 afterEach(()=>{for(const root of roots.splice(0)){expect(root.startsWith(join(tmpdir(),'edupilot-preservation-'))).toBe(true);rmSync(root,{recursive:true,force:true});}});
 describe('non-destructive data preservation',()=>{
+ it('preserves all historical entities through the actual assignment migration',()=>{
+  const {captureManifest,compareManifest}=require(helper);const f=fixture();
+  const before=captureManifest(f.file,{storagePath:f.storage,key});
+  const sql=readFileSync('prisma/migrations/202610170001_assignments/migration.sql','utf8');
+  const db=new Database(f.file);try{db.exec(sql);}finally{db.close();}
+  const after=captureManifest(f.file,{storagePath:f.storage,key,columnsByTable:Object.fromEntries(before.tables.map((t:any)=>[t.name,t.columns]))});
+  expect(compareManifest(before,after)).toEqual({ok:true,differences:[]});expect(after.integrity).toBe('ok');expect(after.foreignKeyViolations).toBe(0);
+ });
  it('preserves every old field through an additive migration',()=>{
   const {captureManifest,compareManifest}=require(helper);const f=fixture();
   const before=captureManifest(f.file,{storagePath:f.storage,key});
