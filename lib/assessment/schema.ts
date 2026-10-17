@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import {normalizeNumeric} from './numeric';
 
 export const questionKinds = ['single','multiple','short','numeric','open'] as const;
 export type QuestionKind = typeof questionKinds[number];
@@ -40,6 +41,7 @@ export function validateAssessment(raw:unknown,{publishable}:{publishable:boolea
         if(q.kind==='single'&&q.correctOptionIds.length>1) bad('Допустим один ключ',path);
         if(publishable && !q.correctOptionIds.length) bad('Укажите правильный ответ',path);
       } else if(publishable && (q.kind==='open' ? !q.criteria.trim() : !q.acceptedAnswers.length)) bad('Заполните ключ или критерии',path);
+      if(publishable&&q.kind==='numeric'&&q.acceptedAnswers.some(a=>normalizeNumeric(a)===null))bad('Числовой ключ должен быть числом или простой дробью в допустимом диапазоне',path);
     });
     if(sum<1||sum>1000) bad('Сумма баллов должна быть от 1 до 1000',['variants',vi]);
     if(expected!==undefined && sum!==expected) bad('Суммы баллов вариантов различаются',['variants',vi]); expected=sum;

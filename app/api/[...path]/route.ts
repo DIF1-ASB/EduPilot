@@ -32,6 +32,8 @@ import { canCreateMaterial, canEditMaterial, type Actor } from '@/lib/materials/
 import { createAssignment, listAssignments, submitHomework } from '@/lib/assignments/service';
 import { handleAssignmentRequest } from '@/lib/assignments/http';
 import { toLegacyAttempt } from '@/lib/assessment/projection';
+import {assessmentTemplate} from '@/lib/assessment/generation';
+import {validateAssessment} from '@/lib/assessment/schema';
 export const dynamic = "force-dynamic";
 const json = (
   body: unknown,
@@ -165,13 +167,13 @@ async function handle(req: Request) {
       });
     }
     if (area === "generate" && method === "POST") {
-      const data = generatorSchema.parse(await readJson(req));
+      const raw=await readJson(req),data = generatorSchema.parse(raw);
       if (!isCreationEnabled(data.type)) fail(410, mediaCreationDisabledMessage);
       if (!canCreateMaterial(actor,data.type)) fail(403,'Этот материал создаёт преподаватель. Ученику доступен личный конспект.');
       await rateLimit(`ai:${user.id}`, 20, 3600);
       if (data.type === "review") teacher();
       return json({
-        content: await getProvider().generateStructuredContent(data),
+        content: raw?.manualTemplate===true&&(data.type==='test'||data.type==='worksheet')?assessmentTemplate(data):await getProvider().generateStructuredContent(data),
         mode: aiStatus().mode,
       });
     }
@@ -188,6 +190,10 @@ async function handle(req: Request) {
         const data = materialInput.parse(await readJson(req));
         if (!isCreationEnabled(data.type)) fail(410, mediaCreationDisabledMessage);
         if (!canCreateMaterial(actor,data.type)) fail(403,'Доступно только преподавателям.');
+        if('schemaVersion' in data.contentJson&&data.contentJson.kind==='assessment'){
+          if(!['test','worksheet'].includes(data.type))fail(400,'Структура вопросов доступна для контрольной или рабочего листа.');
+          validateAssessment(data.contentJson,{publishable:data.status==='ready'});
+        }
         if (data.type === "review") teacher();
         const { version, ...rest } = data;
         return json(
@@ -268,6 +274,10 @@ async function handle(req: Request) {
         if (!canEditMaterial(actor,material)) fail(403,'Материал доступен только для чтения.');
         const data = materialInput.parse(await readJson(req));
         if(actor.role==='student'&&!canCreateMaterial(actor,data.type)) fail(403,'Доступно только преподавателям.');
+        if('schemaVersion' in data.contentJson&&data.contentJson.kind==='assessment'){
+          if(!['test','worksheet'].includes(data.type))fail(400,'Неверный тип структуры материала.');
+          validateAssessment(data.contentJson,{publishable:data.status==='ready'});
+        }
         if (data.type !== material.type)
           fail(400, "Тип материала нельзя изменить.");
         const { version, ...rest } = data;

@@ -45,6 +45,11 @@ describe('versioned material contracts', () => {
       expect(() => validateAssessment(content,{publishable:true})).toThrow();
     }
   });
+  it('refuses a publishable numeric key that the exact numeric grader cannot parse',()=>{
+    const doc={...document(),variants:[{id:'v',label:'V',questions:[{id:'q',kind:'numeric',prompt:'Число',points:1,acceptedAnswers:['1/0']}]}]};
+    expect(()=>validateAssessment(doc,{publishable:true})).toThrow();
+    expect(()=>validateAssessment(doc,{publishable:false})).not.toThrow();
+  });
   it('validates answer identities and types within exactly one variant', () => {
     const doc = validateAssessment(document(),{publishable:true});
     expect(validateAnswers(doc,'v1',{q1:'a'})).toEqual({q1:'a'});

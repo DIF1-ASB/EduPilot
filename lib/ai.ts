@@ -8,16 +8,20 @@ import {
   toolNames,
 } from "./domain";
 import { HttpError } from "./security";
+import type {MaterialContent} from './materials/content';
+import type {AssessmentDocument} from './assessment/schema';
+import {assessmentTemplate,buildAssessmentMessages,parseAssessmentReply} from './assessment/generation';
 export type ConversationMessage = { role: string; content: string };
 export interface AIProvider {
   demo: boolean;
   generateText(messages: ConversationMessage[]): Promise<string>;
-  generateStructuredContent(p: GeneratorInput): Promise<DocumentContent>;
+  generateStructuredContent(p: GeneratorInput): Promise<MaterialContent>;
+  generateAssessment(p:GeneratorInput):Promise<AssessmentDocument>;
   analyzeImage(dataUrl: string, prompt: string): Promise<string>;
   analyzeDocument(text: string, prompt: string): Promise<string>;
   generateLessonPlan(p: GeneratorInput): Promise<DocumentContent>;
-  generateWorksheet(p: GeneratorInput): Promise<DocumentContent>;
-  generateTest(p: GeneratorInput): Promise<DocumentContent>;
+  generateWorksheet(p: GeneratorInput): Promise<AssessmentDocument>;
+  generateTest(p: GeneratorInput): Promise<AssessmentDocument>;
   generatePresentation(p: GeneratorInput): Promise<DocumentContent>;
   generateVideoScript(p: GeneratorInput): Promise<DocumentContent>;
 }
@@ -42,9 +46,11 @@ export class MockAIProvider implements AIProvider {
       "### Разберём тему шаг за шагом\n1. Сформулируйте, что уже известно.\n2. Выделите основное понятие и запишите его своими словами.\n3. Подберите пример и объясните его.\n4. Проверьте себя вопросом «почему это работает?».\n\nВ разделе **Инструменты** можно создать и отредактировать учебный шаблон. Для ответа по конкретной теме подключите ИИ в серверной конфигурации."
     );
   }
-  async generateStructuredContent(p: GeneratorInput) {
+  async generateStructuredContent(p: GeneratorInput):Promise<MaterialContent> {
+    if(p.type==='test'||p.type==='worksheet')return this.generateAssessment(p);
     return template(p);
   }
+  async generateAssessment(p:GeneratorInput):Promise<AssessmentDocument>{return assessmentTemplate(p);}
   async analyzeImage(_dataUrl: string, _prompt: string): Promise<string> {
     throw new HttpError(
       422,
@@ -57,16 +63,16 @@ export class MockAIProvider implements AIProvider {
       "Анализ документов в демо-режиме недоступен. Используйте ручную проверку.",
     );
   }
-  generateLessonPlan = (p: GeneratorInput) =>
-    this.generateStructuredContent({ ...p, type: "lesson" });
+  generateLessonPlan = async (p: GeneratorInput) =>
+    documentSchema.parse(await this.generateStructuredContent({ ...p, type: "lesson" }));
   generateWorksheet = (p: GeneratorInput) =>
-    this.generateStructuredContent({ ...p, type: "worksheet" });
+    this.generateAssessment({ ...p, type: "worksheet" });
   generateTest = (p: GeneratorInput) =>
-    this.generateStructuredContent({ ...p, type: "test" });
-  generatePresentation = (p: GeneratorInput) =>
-    this.generateStructuredContent({ ...p, type: "presentation" });
-  generateVideoScript = (p: GeneratorInput) =>
-    this.generateStructuredContent({ ...p, type: "video" });
+    this.generateAssessment({ ...p, type: "test" });
+  generatePresentation = async (p: GeneratorInput) =>
+    documentSchema.parse(await this.generateStructuredContent({ ...p, type: "presentation" }));
+  generateVideoScript = async (p: GeneratorInput) =>
+    documentSchema.parse(await this.generateStructuredContent({ ...p, type: "video" }));
 }
 export class LiveAIProvider extends MockAIProvider {
   demo = false;
@@ -130,7 +136,16 @@ export class LiveAIProvider extends MockAIProvider {
         .map((x) => ({ role: x.role, content: x.content.slice(0, 12000) })),
     ]);
   }
-  async generateStructuredContent(p: GeneratorInput) {
+  async generateAssessment(p:GeneratorInput):Promise<AssessmentDocument>{
+    let invalid:string|undefined;
+    for(let i=0;i<2;i++){
+      const raw=await this.request(buildAssessmentMessages(p,invalid),true);
+      try{return parseAssessmentReply(raw,p);}catch{invalid=raw;}
+    }
+    throw new HttpError(502,'ИИ вернул некорректные вопросы или ключи. Готовая работа не сохранена; можно повторить запрос или заполнить шаблон вручную.');
+  }
+  async generateStructuredContent(p: GeneratorInput):Promise<MaterialContent> {
+    if(p.type==='test'||p.type==='worksheet')return this.generateAssessment(p);
     const schema =
       '{"sections":[{"id":"строка","title":"строка","body":"строка","duration":число (необязательно),"answer":"строка (необязательно)","points":число (необязательно)}],"demo":false,"totalDuration":число (необязательно)}';
     const messages: ConversationMessage[] = [

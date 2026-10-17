@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { api } from "@/lib/client";
 import { materialSections } from '@/lib/materials/content';
+import {AssessmentEditor,convertLegacyAssessment} from '../assessment/editor';
 import { slidePalette } from "@/lib/slide-theme";
 import {
   subjects,
@@ -93,7 +94,7 @@ export function ToolPage({ type }: { type: ToolType }) {
       equipment: "",
       instructions: "",
       answerSheet: true,
-      questionTypes: ["Открытый вопрос"],
+      questionTypes: ["Развёрнутый ответ"],
       style: "Космос",
       language: "Русский",
     },
@@ -134,10 +135,10 @@ export function ToolPage({ type }: { type: ToolType }) {
       setUploading(false);
     }
   };
-  const submit = handleSubmit(async (data) => {
+  const createMaterial = async (data:GeneratorInput,manualTemplate=false) => {
     setBusy(true);
     try {
-      const { content } = await api("generate", "POST", { ...data, type });
+      const { content } = await api("generate", "POST", { ...data, type,manualTemplate });
       if (type === "review") {
         if (!files.length) throw new Error("Прикрепите работу для проверки.");
         if (
@@ -182,7 +183,8 @@ export function ToolPage({ type }: { type: ToolType }) {
     } finally {
       setBusy(false);
     }
-  });
+  };
+  const submit=handleSubmit(data=>createMaterial(data));
   return (
     <ToolPageLayout
       title={type === "review" ? "Проверить работу" : toolNames[type]}
@@ -321,19 +323,18 @@ export function ToolPage({ type }: { type: ToolType }) {
               </div>
               <Field label="Типы заданий">
                 <select multiple {...register("questionTypes")}>
-                  <option>Открытый вопрос</option>
-                  <option>Тест с выбором ответа</option>
-                  <option>Заполнение пропусков</option>
-                  <option>Соответствия</option>
-                  <option>Последовательность</option>
-                  <option>Практическая задача</option>
-                  <option>Работа с текстом</option>
+                  <option>Развёрнутый ответ</option>
+                  <option>Один вариант</option>
+                  <option>Несколько вариантов</option>
+                  <option>Краткий ответ</option>
+                  <option>Числовой ответ</option>
                 </select>
               </Field>
               <label className="check-field">
                 <input type="checkbox" {...register("answerSheet")} />
                 Отдельный лист ответов
               </label>
+              <button type="button" className="button secondary" disabled={busy} onClick={()=>void handleSubmit(data=>createMaterial(data,true))()}>Создать шаблон вручную без ИИ</button>
             </>
           )}
           {["presentation", "video"].includes(type) && (
@@ -834,6 +835,16 @@ export function MaterialEditor({ id }: { id: string }) {
     );
   if (!material) return <div className="skeleton-list" />;
   const m = material;
+  const download = async (format: string,withAnswers=answers) => {
+    await save();
+    if (revision.current > savedRevision.current) {toast.error('Сначала сохраните изменения');return;}
+    try {
+      const response=await fetch(`/api/materials/${id}/export?format=${format}&answers=${withAnswers}`);
+      if(!response.ok){const e:any=await response.json();throw Error(e.error);}
+      const url=URL.createObjectURL(await response.blob()),link=document.createElement('a');link.href=url;link.download=m.title+'.'+format;link.click();setTimeout(()=>URL.revokeObjectURL(url),3000);toast.success('Файл подготовлен');
+    }catch(e){toast.error((e as Error).message);}
+  };
+  if('schemaVersion' in m.contentJson&&m.canEdit!==false)return <><p className={saveError?'form-error':'save-status'} role="status">{saveError||(saving?'Сохранение…':dirty?'Есть несохранённые изменения':'Все изменения сохранены')}</p><AssessmentEditor material={m} onChange={change} onSave={save} onPreview={()=>{}} onDownload={download}/></>;
   if ('schemaVersion' in m.contentJson) return (
     <AnimatedPage><header className="page-heading"><h1>{m.title}</h1></header>
       <GlassCard>{materialSections(m.contentJson, m.canEdit !== false).sections.map(s=>(
@@ -881,34 +892,9 @@ export function MaterialEditor({ id }: { id: string }) {
         </GlassCard>
       </AnimatedPage>
     );
-  const download = async (format: string) => {
-    await save();
-    if (revision.current > savedRevision.current) {
-      toast.error("Сначала сохраните изменения");
-      return;
-    }
-    try {
-      const response = await fetch(
-        `/api/materials/${id}/export?format=${format}&answers=${answers}`,
-      );
-      if (!response.ok) {
-        const e = await response.json();
-        throw Error((e as any).error);
-      }
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = m.title + "." + format;
-      link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 3000);
-      toast.success("Файл подготовлен");
-    } catch (e) {
-      toast.error((e as Error).message);
-    }
-  };
   return (
     <AnimatedPage>
+      {['test','worksheet'].includes(m.type)&&<div className="ai-disclaimer"><p>Старый формат: один раздел может содержать несколько вопросов. Для назначения контрольной разметьте вопросы и заполните ключи вручную; открытие не меняет материал.</p><button className="button secondary" onClick={()=>{if(confirm('Создать структурированную редакцию? Каждый старый раздел станет одним развёрнутым вопросом без автоматического ключа. Существующие назначения и результаты сохранят прежний снимок.')){change(convertLegacyAssessment(m));void save();}}}>Создать структурированную редакцию</button></div>}
       <header className="editor-heading">
         <div>
           <span className="eyebrow">
