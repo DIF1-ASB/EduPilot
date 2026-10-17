@@ -4,7 +4,7 @@ export type BatchResult={rows:Record<string,unknown>[],changes:number};
 export async function runAssessmentBatch(statements:SqlStatement[]):Promise<BatchResult[]>{
  const binding=getRuntime()?.DB;
  if(binding){
-  const result=await binding.batch(statements.map(({sql,params})=>binding.prepare(sql).bind(...params)));
+  const result=await binding.batch<Record<string,unknown>>(statements.map(({sql,params})=>binding.prepare(sql).bind(...params)));
   return result.map(r=>{if(!r.success)throw new Error('D1 batch failed');return {rows:r.results??[],changes:r.meta?.changes??0};});
  }
  const url=config('DATABASE_URL','file:./prisma/edupilot.db');
