@@ -18,6 +18,9 @@ import { slidePalette } from "./slide-theme";
 import { db } from "./database";
 import { storage } from "./storage";
 import { materialSections, parseMaterialContent } from './materials/content';
+import {buildAllAnswerSheets} from './assessment/sheet';
+import {exportAnswerSheetsDocx} from './assessment/export-docx';
+import {exportAnswerSheetsPdf} from './assessment/export-pdf';
 
 async function getImage(section: Section, ownerId: string) {
   if (!section.imageId) return null;
@@ -41,6 +44,10 @@ export async function exportMaterial(
   format: string,
   teacher: boolean,
 ) {
+  if(['test','worksheet'].includes(material.type)&&['docx','pdf'].includes(format)){
+    const sheets=buildAllAnswerSheets(material,teacher);
+    return {bytes:format==='docx'?await exportAnswerSheetsDocx(sheets):await exportAnswerSheetsPdf(sheets),mime:format==='docx'?'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'application/pdf'};
+  }
   const projected=materialSections(parseMaterialContent(material.contentJson),teacher);
   const data:DocumentContent = material.type==='notes'?{...projected,totalDuration:undefined,sections:projected.sections.map(({duration,...section})=>section)}:projected,
     sections = data.sections,

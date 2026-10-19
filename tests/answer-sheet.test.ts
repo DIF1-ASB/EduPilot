@@ -1,6 +1,7 @@
 import {afterAll,beforeAll,describe,expect,it} from 'vitest';
 import {renderToStaticMarkup} from 'react-dom/server';
 import {createElement} from 'react';
+import JSZip from 'jszip';
 import {buildAnswerSheet} from '../lib/assessment/sheet';
 import {SheetPreview} from '../components/assessment/sheet-preview';
 import {validateAssessment} from '../lib/assessment/schema';
@@ -35,5 +36,13 @@ describe('assignment sheet authorization and snapshot',()=>{
   const sheets=await getAssignmentSheets(f.student,id,{attemptId,includeTeacherKeys:true});expect(sheets).toHaveLength(1);expect(sheets[0].blocks.map(b=>b.id)).toEqual([q.id]);expect(sheets[0].instructions).toBe('Решите самостоятельно');expect(JSON.stringify(sheets)).not.toContain('CANARY_KEY');expect(sheets[0]).not.toHaveProperty('teacherKeys');
   expect((await f.call(`assignments/${id}/release`,'POST',{version:1},f.teacher.cookie)).status).toBe(200);expect(JSON.stringify(await getAssignmentSheets(f.student,id,{attemptId,includeTeacherKeys:true}))).not.toContain('CANARY_KEY');
   const teacher=await getAssignmentSheets(f.teacher,id,{includeTeacherKeys:true});expect(teacher).toHaveLength(2);expect(JSON.stringify(teacher)).toContain('CANARY_KEY');expect(JSON.stringify(teacher)).not.toContain('CHANGED');
+  for(const actor of [f.student,f.teacher]){const download=await f.call(`assignments/${id}/export?format=docx&answers=true&attemptId=${attemptId}`,'GET',undefined,actor.cookie);expect(download.status).toBe(200);const zip=await JSZip.loadAsync(await download.arrayBuffer()),xml=await zip.file('word/document.xml')!.async('string');expect(xml.includes('CANARY_KEY')).toBe(actor.role==='teacher');expect(xml).toContain('ФИО');expect(xml).not.toContain('CHANGED');}
+ });
+ it('keeps original variants and configured lines on a blank material download and returns actionable PDF errors',async()=>{
+  const document=content();document.variants[0].questions[0].answerLines=12;
+  const m=await f.client.material.create({data:{userId:f.teacher.id,type:'worksheet',title:'Бланк',subject:'Математика',grade:7,contentJson:document}});
+  const blank=await f.call(`materials/${m.id}/export?format=docx`,'GET',undefined,f.teacher.cookie);expect(blank.status).toBe(200);const zip=await JSZip.loadAsync(await blank.arrayBuffer()),xml=await zip.file('word/document.xml')!.async('string');expect(xml.match(/<w:pBdr>/g)).toHaveLength(14);expect(xml).toContain('Второй');expect(xml).not.toContain('CANARY_KEY');
+  document.variants[0].questions[0].prompt='Символ 🧑';await f.client.material.update({where:{id:m.id},data:{contentJson:document}});
+  const unsupported=await f.call(`materials/${m.id}/export?format=pdf`,'GET',undefined,f.teacher.cookie);expect(unsupported.status).toBe(422);expect(JSON.stringify(await unsupported.json())).toMatch(/U\+1F9D1.*DOCX/);
  });
 });

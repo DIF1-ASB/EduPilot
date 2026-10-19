@@ -242,7 +242,8 @@ async function handle(req: Request) {
           own &&
           user.role === "teacher" &&
           new URL(req.url).searchParams.get("answers") === "true";
-        const safe = withAnswers ? material : withoutAnswers(material);
+        // Sheet renderer projects keys itself; flattening first would lose variants and answerLines.
+        const safe = ['test','worksheet'].includes(material.type)&&['docx','pdf'].includes(format)?material:withAnswers ? material : withoutAnswers(material);
         const result = await exportMaterial(safe, format, withAnswers);
         return new Response(result.bytes as any, {
           headers: {

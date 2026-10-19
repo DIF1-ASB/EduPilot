@@ -2,6 +2,9 @@ import {readJson,fail} from '../security';
 import type {Actor} from '../materials/policy';
 import {authorizedAssignment,createAssignment,listAssignments,readAssignment,updateAssignment,submitHomework,releaseSolutions} from './service';
 import {startAttempt,loadAttempt,saveDraft,submitAttempt,reviewAttempt,getStudentAttemptView,type PrivateAttempt} from '../assessment/service';
+import {getAssignmentSheets} from './sheets';
+import {exportAnswerSheetsDocx} from '../assessment/export-docx';
+import {exportAnswerSheetsPdf} from '../assessment/export-pdf';
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 function teacherAttempt(attempt:PrivateAttempt){
  return {id:attempt.id,assignmentId:attempt.assignmentId,studentId:attempt.studentId,number:attempt.number,variantId:attempt.variantId,status:attempt.status,version:attempt.version,
@@ -25,14 +28,10 @@ export async function handleAssignmentRequest(req:Request,actor:Actor):Promise<R
  if(action==='release'&&parts.length===3&&method==='POST')return json(await releaseSolutions(actor,id,await readJson(req)));
  if(action==='homework'&&parts.length===3&&method==='POST')return json(await submitHomework(actor,id,await readJson(req)));
  if(action==='export'&&parts.length===3&&method==='GET'){
-  await authorizedAssignment(actor,id);
-  if(!['docx','pdf'].includes(url.searchParams.get('format')??'docx'))fail(400,'Неподдерживаемый формат.');
-  if(actor.role==='student'){
-   const attemptId=url.searchParams.get('attemptId');if(!attemptId)fail(400,'Выберите собственную завершённую попытку.');
-   const attempt=await getStudentAttemptView(actor,id,attemptId);if(attempt.status==='in_progress')fail(409,'Скачивание доступно после завершения попытки.');
-  }
-  // Replaced with the shared, role-safe document renderer in task B2 before rollout.
-  fail(503,'Экспорт бланка временно недоступен. Работа и ответы сохранены.');
+  const format=url.searchParams.get('format')??'docx';if(!['docx','pdf'].includes(format))fail(400,'Неподдерживаемый формат.');
+  const sheets=await getAssignmentSheets(actor,id,{attemptId:url.searchParams.get('attemptId'),includeTeacherKeys:url.searchParams.get('answers')==='true'});
+  const bytes=format==='docx'?await exportAnswerSheetsDocx(sheets):await exportAnswerSheetsPdf(sheets);
+  return new Response(bytes as BodyInit,{headers:{'Content-Type':format==='docx'?'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'application/pdf','Content-Disposition':`attachment; filename="EduPilot.${format}"; filename*=UTF-8''${encodeURIComponent(sheets[0].title)}.${format}`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
  }
  if(action==='attempts'){
   if(parts.length===3&&method==='GET'){

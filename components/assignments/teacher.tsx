@@ -1,4 +1,5 @@
 'use client';
+import {AssignmentDownloads} from './downloads';
 import {useEffect,useState} from 'react';import {toast} from 'sonner';import {api} from '@/lib/client';
 import type {MaterialRecord} from '@/lib/domain';import type {TeacherAssignmentDTO} from '@/lib/assignments/contracts';
 import {GlassCard,AnimatedPage} from '../ui/edupilot';import {statusLabel,dateLabel} from './list';
@@ -32,6 +33,7 @@ export function AssignmentTeacherPanel({assignmentId}:{assignmentId:string}){
  if(!item)return <p role={error?'alert':'status'}>{error||'Загрузка назначения…'}</p>;
  return <AnimatedPage><header className="page-heading"><span className="eyebrow">РАБОТА ПРЕПОДАВАТЕЛЯ</span><h1>{item.title}</h1><p>{item.className} · Срок: {dateLabel(item.policy.dueDate)}</p></header>{error&&<p role="alert" className="form-error">{error}</p>}
   <a className="button secondary" href={'/materials/'+item.materialId}>Исходный материал (назначение хранит прежний снимок)</a>
+  {item.kind==='test'&&<AssignmentDownloads assignmentId={assignmentId} teacher/>}
   {item.kind==='test'&&<GlassCard><h2>Настройки контрольной</h2><form key={item.version} onSubmit={e=>{e.preventDefault();const data=new FormData(e.currentTarget);void operation(()=>api('assignments/'+assignmentId,'PATCH',{version:item.version,title:data.get('title'),maxAttempts:Number(data.get('maxAttempts')),durationMinutes:Number(data.get('durationMinutes')),answerPolicy:data.get('answerPolicy'),dueDate:dateValue(data.get('dueDate')),closed:data.get('closed')==='on'}),'Настройки сохранены');}}>
    <label className="field">Название назначения<input name="title" defaultValue={item.title} required maxLength={200}/></label>
    <div className="form-grid"><label className="field">Лимит попыток<input name="maxAttempts" type="number" min={1} max={item.disclosureLockedAt||item.closedAt?item.policy.maxAttempts:10} defaultValue={item.policy.maxAttempts} required/></label><label className="field">Длительность, минут<input name="durationMinutes" type="number" min={5} max={240} defaultValue={item.policy.durationMinutes} required/></label></div>

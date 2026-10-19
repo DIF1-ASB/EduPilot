@@ -1,4 +1,5 @@
 'use client';
+import {AssignmentDownloads} from './downloads';
 import {useEffect,useRef,useState} from 'react';
 import {api} from '@/lib/client';import type {AttemptDTO} from '@/lib/assessment/public';import type {AnswerMap} from '@/lib/assessment/schema';
 import {QuestionInput} from '../assessment/question-input';import {AnimatedPage,GlassCard} from '../ui/edupilot';
@@ -37,6 +38,7 @@ export function AttemptPage({assignmentId,attemptId}:{assignmentId:string,attemp
   {view.result&&<GlassCard><h2>{view.status==='pending_review'?'Ожидает проверки преподавателем':`Результат: ${view.result.score} / ${view.result.maxScore}`}</h2>{view.status==='pending_review'&&<p>Предварительный балл объективной части: {view.result.autoScore} / {view.result.maxScore}</p>}{view.result.teacherComments.map(c=><p key={c.questionId}>Комментарий преподавателя: {c.comment}</p>)}</GlassCard>}
   <div className="assessment-questions">{view.questions.map(q=><QuestionInput key={q.id} question={q} value={answers[q.id]??(q.kind==='multiple'?[]:'')} disabled={disabled} onChange={value=>change(q.id,value)}/>)}</div>
   {!terminal&&<button className="button primary" disabled={disabled} onClick={()=>void submit()}>Завершить контрольную</button>}
+  {terminal&&<AssignmentDownloads assignmentId={assignmentId} attemptId={attemptId}/>}
   {view.result?.solutions&&<GlassCard className="section-space"><h2>Разрешённые решения</h2>{view.result.solutions.map(solution=>{const q=view.questions.find(q=>q.id===solution.questionId);const value=Array.isArray(solution.answer)?solution.answer.map(a=>q?.options?.find(o=>o.id===a)?.label??a).join('; '):solution.answer;return <section key={solution.questionId}><h3>{q?.prompt}</h3><p>Ключ / критерии: {value}</p><p>{solution.explanation}</p><p>Баллы: {solution.points} / {solution.maxPoints}</p></section>;})}</GlassCard>}
  </AnimatedPage>;
 }
