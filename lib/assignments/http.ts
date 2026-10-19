@@ -5,6 +5,7 @@ import {startAttempt,loadAttempt,saveDraft,submitAttempt,reviewAttempt,getStuden
 import {getAssignmentSheets} from './sheets';
 import {exportAnswerSheetsDocx} from '../assessment/export-docx';
 import {exportAnswerSheetsPdf} from '../assessment/export-pdf';
+import {exportMaterial} from '../export';
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 function teacherAttempt(attempt:PrivateAttempt){
  return {id:attempt.id,assignmentId:attempt.assignmentId,studentId:attempt.studentId,number:attempt.number,variantId:attempt.variantId,status:attempt.status,version:attempt.version,
@@ -29,6 +30,11 @@ export async function handleAssignmentRequest(req:Request,actor:Actor):Promise<R
  if(action==='homework'&&parts.length===3&&method==='POST')return json(await submitHomework(actor,id,await readJson(req)));
  if(action==='export'&&parts.length===3&&method==='GET'){
   const format=url.searchParams.get('format')??'docx';if(!['docx','pdf'].includes(format))fail(400,'Неподдерживаемый формат.');
+  const assignment=await authorizedAssignment(actor,id);
+  if(assignment.kind==='homework'){
+   const result=await exportMaterial({...assignment.material,title:assignment.title,contentJson:assignment.snapshotJson??assignment.material.contentJson},format,actor.role==='teacher'&&url.searchParams.get('answers')==='true');
+   return new Response(result.bytes as BodyInit,{headers:{'Content-Type':result.mime,'Content-Disposition':`attachment; filename="EduPilot.${format}"; filename*=UTF-8''${encodeURIComponent(assignment.title)}.${format}`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+  }
   const sheets=await getAssignmentSheets(actor,id,{attemptId:url.searchParams.get('attemptId'),includeTeacherKeys:url.searchParams.get('answers')==='true'});
   const bytes=format==='docx'?await exportAnswerSheetsDocx(sheets):await exportAnswerSheetsPdf(sheets);
   return new Response(bytes as BodyInit,{headers:{'Content-Type':format==='docx'?'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'application/pdf','Content-Disposition':`attachment; filename="EduPilot.${format}"; filename*=UTF-8''${encodeURIComponent(sheets[0].title)}.${format}`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});

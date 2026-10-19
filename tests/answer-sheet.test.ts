@@ -45,4 +45,17 @@ describe('assignment sheet authorization and snapshot',()=>{
   document.variants[0].questions[0].prompt='Символ 🧑';await f.client.material.update({where:{id:m.id},data:{contentJson:document}});
   const unsupported=await f.call(`materials/${m.id}/export?format=pdf`,'GET',undefined,f.teacher.cookie);expect(unsupported.status).toBe(422);expect(JSON.stringify(await unsupported.json())).toMatch(/U\+1F9D1.*DOCX/);
  });
+ it('exports enrolled homework snapshots and legacy sources without private keys',async()=>{
+  const group=await f.client.schoolClass.create({data:{teacherId:f.teacher.id,name:'Домашняя группа',subject:'Математика',enrollments:{create:{studentId:f.student.id}}}});
+  for(const type of ['worksheet','lesson','notes']){
+   const source={demo:false,sections:[{id:'legacy',title:'Задание',body:'ORIGINAL_HOMEWORK_CONDITION',answer:'HOMEWORK_PRIVATE_KEY'}]};
+   const m=await f.client.material.create({data:{userId:f.teacher.id,type,title:'Домашняя',subject:'Математика',grade:7,contentJson:source}});
+   for(const snapshotJson of [source,undefined]){
+    const assignment=await f.client.assignment.create({data:{classId:group.id,materialId:m.id,title:'Домашняя',kind:'homework',...(snapshotJson?{snapshotJson}:{})}});
+    const response=await f.call(`assignments/${assignment.id}/export?format=docx&answers=true`,'GET',undefined,f.student.cookie);expect(response.status).toBe(200);
+    const zip=await JSZip.loadAsync(await response.arrayBuffer()),xml=await zip.file('word/document.xml')!.async('string');expect(xml).toContain('ORIGINAL_HOMEWORK_CONDITION');expect(xml).not.toContain('HOMEWORK_PRIVATE_KEY');
+    expect((await f.call(`assignments/${assignment.id}/export?format=pdf`,'GET',undefined,f.outsider.cookie)).status).toBe(404);
+   }
+  }
+ });
 });

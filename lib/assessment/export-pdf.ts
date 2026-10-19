@@ -25,7 +25,7 @@ function layout(sheets:AnswerSheet[],font:PDFFont,symbol:PDFFont){
   }return result;
  };
  const pages:Op[][]=[];let page:Op[]=[],y=TOP,continuation='';
- const newPage=()=>{page=[];pages.push(page);y=TOP;if(continuation){const text=continuation+' · продолжение';page.push({kind:'text',x:LEFT,y,width:font.widthOfTextAtSize(text,10),text,size:10});y-=26;}};
+ const newPage=()=>{page=[];pages.push(page);y=TOP;if(continuation){lines(wrap(continuation+' · продолжение',10),10);y-=10;}};
  const ensure=(height:number)=>{if(y-height<BOTTOM)newPage();};
  const lines=(parts:string[],size=11,x=LEFT)=>{for(const text of parts){ensure(size*1.6);let cursor=x;for(const run of text.split(/(−)/).filter(Boolean)){const width=widthOf(run,size);page.push({kind:'text',x:cursor,y,width,text:run,size,symbol:run==='−'});cursor+=width;}y-=size*1.6;}};
  const text=(value:string,size=11)=>lines(wrap(value,size),size);

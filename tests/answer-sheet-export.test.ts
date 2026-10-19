@@ -22,4 +22,10 @@ describe('answer sheet export',()=>{
  it('starts a long question in remaining first-page space rather than leaving a header-only sheet',async()=>{
   const layout=await layoutAnswerSheets(sheetFixtures.long);expect(layout.pages[0].some(op=>op.text?.includes('Задание long'))).toBe(true);
  });
+ it('wraps long legacy continuation titles within margins with supported math symbols',async()=>{
+  const sheet=structuredClone(sheetFixtures.long[0]);sheet.blocks[0].title=('Длинный заголовок раздела − дроби и уравнения. ').repeat(6);
+  const layout=await layoutAnswerSheets([sheet]);expect(layout.pages.length).toBeGreaterThan(2);
+  for(const page of layout.pages){for(const op of page){expect(op.x+op.width).toBeLessThanOrEqual(545.29);expect(op.y).toBeGreaterThanOrEqual(50);}}
+  expect(layout.pages.slice(1).every(p=>p.some(o=>o.text?.includes('продолжение')))).toBe(true);
+ });
 });

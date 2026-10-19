@@ -93,12 +93,13 @@ export async function updateAssignment(actor:Actor,id:string,raw:unknown):Promis
  const row=await authorizedAssignment(actor,id);
  const next={maxAttempts:input.maxAttempts??row.maxAttempts,durationMinutes:input.durationMinutes??row.durationMinutes,answerPolicy:input.answerPolicy??row.answerPolicy,dueDate:input.dueDate===undefined?row.dueDate?.toISOString()??null:input.dueDate};validatePolicy(next);
  if(next.maxAttempts>row.maxAttempts&&(row.disclosureLockedAt||row.closedAt))fail(409,'После раскрытия решений или закрытия создайте новое назначение.');
- if(input.closed===false&&row.solutionsReleasedAt)fail(409,'Опубликованные решения нельзя отозвать и открыть повторную сдачу.');
+ if(input.closed===false&&(row.solutionsReleasedAt||row.closedAt&&row.disclosureLockedAt))fail(409,'Опубликованные решения нельзя отозвать и открыть повторную сдачу.');
  const closed=input.closed===true?(row.closedAt??new Date()):input.closed===false?null:row.closedAt;
  const changed=await runAssessmentBatch([{sql:`UPDATE Assignment SET title=?,maxAttempts=?,durationMinutes=?,answerPolicy=?,dueDate=?,closedAt=?,version=version+1
   WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM SchoolClass WHERE id=Assignment.classId AND teacherId=?)
   AND (?<=maxAttempts OR (disclosureLockedAt IS NULL AND closedAt IS NULL))
-  AND (solutionsReleasedAt IS NULL OR ? IS NOT NULL)`,params:[input.title??row.title,next.maxAttempts,next.durationMinutes,next.answerPolicy,next.dueDate?sqlDate(new Date(next.dueDate)):null,closed?sqlDate(closed):null,id,input.version,actor.id,next.maxAttempts,closed?sqlDate(closed):null]}]);
+  AND (solutionsReleasedAt IS NULL OR ? IS NOT NULL)
+  AND (closedAt IS NULL OR disclosureLockedAt IS NULL OR ? IS NOT NULL)`,params:[input.title??row.title,next.maxAttempts,next.durationMinutes,next.answerPolicy,next.dueDate?sqlDate(new Date(next.dueDate)):null,closed?sqlDate(closed):null,id,input.version,actor.id,next.maxAttempts,closed?sqlDate(closed):null,closed?sqlDate(closed):null]}]);
  if(!changed[0].changes)fail(409,'Настройки изменены или решения уже раскрыты.');
  return await readAssignment(actor,id) as TeacherAssignmentDTO;
 }

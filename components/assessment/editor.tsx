@@ -1,5 +1,5 @@
 'use client';
-import {useState} from 'react';
+import {useEffect,useState} from 'react';
 import type {MaterialRecord} from '@/lib/domain';
 import {questionKinds,defaultAnswerLines,validateAssessment,type Question,type QuestionKind,type AssessmentDocument} from '@/lib/assessment/schema';
 import {buildAnswerSheet} from '@/lib/assessment/sheet';
@@ -21,6 +21,17 @@ export function convertLegacyAssessment(material:MaterialRecord):MaterialRecord{
  if('schemaVersion' in material.contentJson)return material;
  const content:AssessmentDocument={schemaVersion:2,kind:'assessment',demo:material.contentJson.demo??false,instructions:'',variants:[{id:crypto.randomUUID(),label:'Вариант 1',questions:material.contentJson.sections.map(s=>({id:crypto.randomUUID(),kind:'open',prompt:s.title+'\n'+s.body+(s.options?.length?'\n'+s.options.join('\n'):''),points:s.points??1,answerLines:6,criteria:''}))}]};
  return {...material,status:'draft',contentJson:content,metadataJson:{...material.metadataJson,keysConfirmed:false}};
+}
+export function moveAssessmentQuestion(material:MaterialRecord,variantId:string,questionId:string,direction:-1|1):MaterialRecord{
+ const doc=material.contentJson;if(!('schemaVersion' in doc)||doc.kind!=='assessment')throw Error('Нужна структурированная работа');
+ const variants=doc.variants.map(v=>{if(v.id!==variantId)return v;const questions=[...v.questions],at=questions.findIndex(q=>q.id===questionId),next=at+direction;if(at<0||next<0||next>=questions.length)return v;[questions[at],questions[next]]=[questions[next],questions[at]];return {...v,questions};});
+ return {...material,status:'draft',contentJson:{...doc,variants},metadataJson:{...material.metadataJson,keysConfirmed:false}};
+}
+function AcceptedAnswersField({answers,onChange}:{answers:string[],onChange:(answers:string[])=>void}){
+ const [raw,setRaw]=useState(answers.join('\n')),normalized=(value:string)=>value.split('\n').map(x=>x.trim()).filter(Boolean);
+ const value=answers.join('\n');
+ useEffect(()=>{if(normalized(raw).join('\n')!==value)setRaw(value);},[value]);
+ return <label className="field">Правильные ответы — каждый с новой строки<textarea value={raw} maxLength={20000} onChange={e=>{setRaw(e.target.value);onChange(normalized(e.target.value));}}/></label>;
 }
 type Props={material:MaterialRecord,onChange:(m:MaterialRecord)=>void,onSave:()=>Promise<void>,onPreview:()=>void,onDownload?:(format:string,answers:boolean)=>void};
 export function AssessmentEditor({material,onChange,onSave,onPreview,onDownload}:Props){
@@ -53,6 +64,7 @@ export function AssessmentEditor({material,onChange,onSave,onPreview,onDownload}
     <p>Вопросов: {variant.questions.length} · Максимум: {variant.questions.reduce((n,q)=>n+q.points,0)} баллов</p>
     {doc.variants.length>1&&<button className="button secondary" onClick={()=>mutate({...doc,variants:doc.variants.filter(v=>v.id!==variant.id)})}>Удалить вариант {vi+1}</button>}
     {variant.questions.map((q,qi)=><fieldset className="assessment-question section-space" key={q.id}><legend>Задание {qi+1}</legend>
+     <div className="button-row"><button className="button secondary" disabled={qi===0} onClick={()=>onChange(moveAssessmentQuestion(material,variant.id,q.id,-1))}>Переместить задание {qi+1} вверх</button><button className="button secondary" disabled={qi===variant.questions.length-1} onClick={()=>onChange(moveAssessmentQuestion(material,variant.id,q.id,1))}>Переместить задание {qi+1} вниз</button></div>
      <label className="field">Тип вопроса<select value={q.kind} onChange={e=>question(variant.id,q.id,{kind:e.target.value as QuestionKind})}>{questionKinds.map(k=><option key={k} value={k}>{names[k]}</option>)}</select></label>
      <label className="field">Условие<textarea value={q.prompt} maxLength={20000} onChange={e=>question(variant.id,q.id,{prompt:e.target.value})}/></label>
      <div className="form-grid"><label className="field">Баллы<input type="number" min={0} max={1000} step={1} value={q.points} onChange={e=>question(variant.id,q.id,{points:Number(e.target.value)})}/></label>
@@ -63,7 +75,7 @@ export function AssessmentEditor({material,onChange,onSave,onPreview,onDownload}
       {q.options.length>2&&<button className="button secondary" onClick={()=>question(variant.id,q.id,{options:q.options.filter(x=>x.id!==o.id),correctOptionIds:q.correctOptionIds.filter(id=>id!==o.id)})}>Удалить вариант ответа</button>}
      </div>)}<button className="button secondary" disabled={q.options.length>=10} onClick={()=>question(variant.id,q.id,{options:[...q.options,{id:crypto.randomUUID(),label:'Новый вариант'}]})}>Добавить вариант ответа</button></div>
      :q.kind==='open'?<label className="field">Критерии ручной проверки<textarea value={q.criteria} maxLength={10000} onChange={e=>question(variant.id,q.id,{criteria:e.target.value})}/></label>
-     :<label className="field">Правильные ответы — каждый с новой строки<textarea value={q.acceptedAnswers.join('\n')} maxLength={20000} onChange={e=>question(variant.id,q.id,{acceptedAnswers:e.target.value.split('\n').filter(x=>x.trim())})}/></label>}
+     :<AcceptedAnswersField key={q.id+'-'+q.kind} answers={q.acceptedAnswers} onChange={acceptedAnswers=>question(variant.id,q.id,{acceptedAnswers})}/>}
      <label className="field">Разбор для преподавателя<textarea value={q.explanation??''} maxLength={10000} onChange={e=>question(variant.id,q.id,{explanation:e.target.value})}/></label>
      {variant.questions.length>1&&<button className="button secondary" onClick={()=>mutate({...doc,variants:doc.variants.map(v=>v.id===variant.id?{...v,questions:v.questions.filter(x=>x.id!==q.id)}:v)})}>Удалить задание {qi+1}</button>}
     </fieldset>)}

@@ -43,6 +43,15 @@ describe('server controlled solution disclosure',()=>{
   const other=await s.startAttempt(f.outsider,assignment.id,{requestId:crypto.randomUUID()},clock);
   hidden(await s.getStudentAttemptView(f.outsider,assignment.id,other.id,clock));
  });
+ it('cannot reopen deadline-disclosed keys by extending the deadline or changing the disclosure policy',async()=>{
+  const {assignment,done}=await finished({answerPolicy:'after_due',maxAttempts:2,dueDate:'2026-10-17T12:05:00Z'});
+  const after=()=>new Date('2026-10-17T12:05:00Z');
+  expect((await s.getStudentAttemptView(f.student,assignment.id,done.id,after)).result?.solutions).toHaveLength(2);
+  const row=await f.client.assignment.findUniqueOrThrow({where:{id:assignment.id}});
+  expect(row.closedAt).not.toBeNull();
+  await expect(a.updateAssignment(f.teacher,assignment.id,{version:row.version,closed:false,dueDate:'2026-10-20T12:00:00Z',answerPolicy:'manual'})).rejects.toMatchObject({status:409});
+  await expect(s.startAttempt(f.student,assignment.id,{requestId:crypto.randomUUID()},after)).rejects.toMatchObject({status:409});
+ });
  it('allows new-attempt policy changes without extending a started timer or deleting old attempts',async()=>{
   const assignment=await issued({maxAttempts:2});const active=await s.startAttempt(f.student,assignment.id,{requestId:crypto.randomUUID()},clock);
   await a.updateAssignment(f.teacher,assignment.id,{version:1,maxAttempts:1,durationMinutes:90,dueDate:'2026-10-18T12:00:00Z'});

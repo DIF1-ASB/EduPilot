@@ -101,14 +101,15 @@ export async function getStudentAttemptView(actor:Actor,assignmentId:string,atte
   const used=assignment.assessmentAttempts.filter(a=>a.studentId===actor.id).length;
   if(!canRevealSolutions(assignment,attempt,used,now))return toStudentAttempt(assignment,attempt,used,now);
   const due=epochSql('Assignment.dueDate');
-  const gate=await runAssessmentBatch([{sql:`UPDATE Assignment SET disclosureLockedAt=COALESCE(disclosureLockedAt,?)
+  const gate=await runAssessmentBatch([{sql:`UPDATE Assignment SET disclosureLockedAt=COALESCE(disclosureLockedAt,?),
+   closedAt=CASE WHEN answerPolicy='after_due' THEN COALESCE(closedAt,?) ELSE closedAt END
    WHERE id=? AND version=? AND EXISTS(SELECT 1 FROM Enrollment WHERE classId=Assignment.classId AND studentId=?)
    AND EXISTS(SELECT 1 FROM AssessmentAttempt p WHERE p.id=? AND p.assignmentId=Assignment.id AND p.studentId=? AND p.status IN ('graded','pending_review'))
    AND NOT EXISTS(SELECT 1 FROM AssessmentAttempt p WHERE p.assignmentId=Assignment.id AND p.studentId=? AND p.status='in_progress')
    AND ((answerPolicy='manual' AND solutionsReleasedAt IS NOT NULL)
     OR (answerPolicy='after_due' AND dueDate IS NOT NULL AND ${due}<=?)
     OR (answerPolicy='after_last' AND (SELECT COUNT(*) FROM AssessmentAttempt p WHERE p.assignmentId=Assignment.id AND p.studentId=?)>=maxAttempts))`,
-   params:[sqlDate(now),assignmentId,assignment.version,actor.id,attemptId,actor.id,actor.id,now.getTime(),actor.id]}]);
+   params:[sqlDate(now),sqlDate(now),assignmentId,assignment.version,actor.id,attemptId,actor.id,actor.id,now.getTime(),actor.id]}]);
   if(gate[0].changes)return toStudentAttempt(assignment,attempt,used,now);
  }
  fail(409,'Настройки работы изменились. Обновите результат.');

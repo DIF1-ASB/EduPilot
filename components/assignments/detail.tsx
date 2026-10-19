@@ -3,6 +3,7 @@ import {useEffect,useRef,useState} from 'react';import {toast} from 'sonner';
 import {api} from '@/lib/client';import type {AssignmentStudentDTO} from '@/lib/assignments/contracts';import type {AttemptDTO} from '@/lib/assessment/public';
 import {materialSections} from '@/lib/materials/content';import {useApp} from '../app-context';import {AnimatedPage,GlassCard} from '../ui/edupilot';
 import {AssignmentTeacherPanel} from './teacher';import {dateLabel,statusLabel} from './list';
+import {AssignmentDownloads} from './downloads';
 export function AssignmentPage({id}:{id:string}){const {user}=useApp();return user.role==='teacher'?<AssignmentTeacherPanel assignmentId={id}/>:<StudentAssignment id={id}/>;}
 function StudentAssignment({id}:{id:string}){
  const {navigate}=useApp(),[item,setItem]=useState<AssignmentStudentDTO|null>(null),[text,setText]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),requestId=useRef<string|null>(null),edits=useRef(0),currentId=useRef(id);currentId.current=id;
@@ -22,6 +23,7 @@ function StudentAssignment({id}:{id:string}){
    {active?<button className="button primary" onClick={()=>navigate(`/assignments/${id}/attempts/${active.id}`)}>Продолжить контрольную</button>:canStart?<button className="button primary" disabled={busy} onClick={()=>void start()}>Начать контрольную</button>:<p>Новые попытки недоступны: лимит исчерпан, работа закрыта или срок истёк.</p>}</GlassCard>
    <h2 className="section-space">Мои попытки</h2>{item.attempts.map(a=><GlassCard key={a.id}><p>Попытка {a.number} · {statusLabel(a.status)}</p><button className="button secondary" onClick={()=>navigate(`/assignments/${id}/attempts/${a.id}`)}>Открыть попытку {a.number}</button></GlassCard>)}</>
   :<><GlassCard>{sections.map(s=><section key={s.id}><h2>{s.title}</h2><p style={{whiteSpace:'pre-wrap'}}>{s.body}</p>{s.options?.map((o,i)=><p key={i}>{o}</p>)}</section>)}</GlassCard>
+   <AssignmentDownloads assignmentId={id}/>
    <GlassCard className="section-space"><h2>Моя работа</h2>{item.submission?.grade?<><p>Оценка: {item.submission.grade.score} / {item.submission.grade.maxScore}</p><p>{item.submission.grade.teacherComment}</p><p style={{whiteSpace:'pre-wrap'}}>{item.submission.text}</p></>:<form onSubmit={async e=>{e.preventDefault();setBusy(true);setError('');try{await api(`assignments/${id}/homework`,'POST',{text});await load();toast.success('Работа отправлена');}catch(e){setError((e as Error).message);}finally{setBusy(false);}}}>
     <label className="field">Мой ответ<textarea value={text} required maxLength={20000} rows={8} onChange={e=>{edits.current++;setText(e.target.value);}}/></label><button className="button primary" disabled={busy||item.closed}>Отправить домашнюю работу</button>{item.submission&&<p>Последняя отправка: {dateLabel(item.submission.submittedAt)}. Можно исправить до оценки или срока.</p>}
    </form>}</GlassCard></>}
