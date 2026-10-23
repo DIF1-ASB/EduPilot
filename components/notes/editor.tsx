@@ -2,7 +2,12 @@
 import {useEffect,useRef,useState} from 'react';
 import {api} from '@/lib/client';import type {MaterialRecord} from '@/lib/domain';import type {NotesDocument} from '@/lib/notes/schema';
 import {AnimatedPage,GlassCard} from '../ui/edupilot';import {NotesPreview} from './preview';
+import {NotesArticleEditor} from './article-editor';
 export function NotesEditor({material,onSave}:{material:MaterialRecord,onSave:(material:MaterialRecord)=>Promise<MaterialRecord>}){
+ if('schemaVersion' in material.contentJson&&material.contentJson.kind==='notes-article')return <NotesArticleEditor material={material} onSave={onSave}/>;
+ return <LegacyNotesEditor material={material} onSave={onSave}/>;
+}
+function LegacyNotesEditor({material,onSave}:{material:MaterialRecord,onSave:(material:MaterialRecord)=>Promise<MaterialRecord>}){
  const [draft,setDraft]=useState(material),[dirty,setDirty]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[preview,setPreview]=useState(false),[copy,setCopy]=useState(false),dirtyRef=useRef(false);
  useEffect(()=>{const guard=(e:BeforeUnloadEvent)=>{if(dirtyRef.current){e.preventDefault();e.returnValue='';}},nav=(e:Event)=>{if(dirtyRef.current&&!confirm('Есть несохранённый конспект. Покинуть страницу?'))e.preventDefault();};window.addEventListener('beforeunload',guard);window.addEventListener('edupilot:navigate',nav);return()=>{window.removeEventListener('beforeunload',guard);window.removeEventListener('edupilot:navigate',nav);};},[]);
  const change=(value:MaterialRecord)=>{setDraft(value);setDirty(true);dirtyRef.current=true;setMessage('');};

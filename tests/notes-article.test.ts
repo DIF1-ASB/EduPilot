@@ -4,8 +4,12 @@ import {notesArticleInputSchema,validateNotesArticle,parseArticleReply,buildArti
 import {parseMaterialContent} from '../lib/materials/content';
 import {createNotesDraft} from '../lib/notes/schema';
 import {articleFixture} from './helpers/online-content';
+import {withoutAnswers} from '../lib/domain';
 afterEach(()=>vi.unstubAllGlobals());
 describe('coherent prose notes contract',()=>{
+ it('preserves the article discriminator for a safe student export instead of flattening Markdown',()=>{
+  const content=articleFixture(),safe=withoutAnswers({contentJson:content,metadataJson:{privateField:'must-not-leak'}});expect(safe.contentJson).toEqual(content);expect(safe.metadataJson).toEqual({});
+ });
  it('returns the new article from the provider and marks its mock as unfinished',async()=>{
   const params=notesArticleInputSchema.parse({title:'Клетка',subject:'Биология',grade:6});
   vi.stubGlobal('fetch',async()=>Response.json({choices:[{message:{content:JSON.stringify(articleFixture())}}]}));

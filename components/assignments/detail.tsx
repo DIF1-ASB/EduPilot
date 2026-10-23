@@ -4,6 +4,7 @@ import {api} from '@/lib/client';import type {AssignmentStudentDTO} from '@/lib/
 import {materialSections} from '@/lib/materials/content';import {useApp} from '../app-context';import {AnimatedPage,GlassCard} from '../ui/edupilot';
 import {AssignmentTeacherPanel} from './teacher';import {dateLabel,statusLabel} from './list';
 import {AssignmentDownloads} from './downloads';
+import {MarkdownContent} from '../content/markdown';
 export function AssignmentPage({id}:{id:string}){const {user}=useApp();return user.role==='teacher'?<AssignmentTeacherPanel assignmentId={id}/>:<StudentAssignment id={id}/>;}
 function StudentAssignment({id}:{id:string}){
  const {navigate}=useApp(),[item,setItem]=useState<AssignmentStudentDTO|null>(null),[text,setText]=useState(''),[error,setError]=useState(''),[busy,setBusy]=useState(false),requestId=useRef<string|null>(null),edits=useRef(0),currentId=useRef(id);currentId.current=id;
@@ -22,8 +23,8 @@ function StudentAssignment({id}:{id:string}){
   {item.kind==='test'?<><GlassCard><h2>Перед началом</h2><p>Длительность: {item.policy.durationMinutes} минут. Лимит: {item.policy.maxAttempts}. Уже начато: {item.usedAttempts}.</p><p>Таймер запускается только кнопкой ниже. Перезагрузка не добавляет время. Решения {item.policy.answerPolicy==='manual'?'скрыты до разрешения преподавателя':item.policy.answerPolicy==='after_due'?'открываются после срока':'открываются после вашей последней завершённой попытки'}.</p>
    {active?<button className="button primary" onClick={()=>navigate(`/assignments/${id}/attempts/${active.id}`)}>Продолжить контрольную</button>:canStart?<button className="button primary" disabled={busy} onClick={()=>void start()}>Начать контрольную</button>:<p>Новые попытки недоступны: лимит исчерпан, работа закрыта или срок истёк.</p>}</GlassCard>
    <h2 className="section-space">Мои попытки</h2>{item.attempts.map(a=><GlassCard key={a.id}><p>Попытка {a.number} · {statusLabel(a.status)}</p><button className="button secondary" onClick={()=>navigate(`/assignments/${id}/attempts/${a.id}`)}>Открыть попытку {a.number}</button></GlassCard>)}</>
-  :<><GlassCard>{sections.map(s=><section key={s.id}><h2>{s.title}</h2><p style={{whiteSpace:'pre-wrap'}}>{s.body}</p>{s.options?.map((o,i)=><p key={i}>{o}</p>)}</section>)}</GlassCard>
-   <AssignmentDownloads assignmentId={id}/>
+  :<><GlassCard>{sections.map(s=><section key={s.id}><h2>{s.title}</h2><div style={{whiteSpace:'pre-wrap'}}><MarkdownContent source={s.body}/></div>{s.options?.map((o,i)=><p key={i}>{o}</p>)}</section>)}</GlassCard>
+   <AssignmentDownloads assignmentId={id} kind="homework"/>
    <GlassCard className="section-space"><h2>Моя работа</h2>{item.submission?.grade?<><p>Оценка: {item.submission.grade.score} / {item.submission.grade.maxScore}</p><p>{item.submission.grade.teacherComment}</p><p style={{whiteSpace:'pre-wrap'}}>{item.submission.text}</p></>:<form onSubmit={async e=>{e.preventDefault();setBusy(true);setError('');try{await api(`assignments/${id}/homework`,'POST',{text});await load();toast.success('Работа отправлена');}catch(e){setError((e as Error).message);}finally{setBusy(false);}}}>
     <label className="field">Мой ответ<textarea value={text} required maxLength={20000} rows={8} onChange={e=>{edits.current++;setText(e.target.value);}}/></label><button className="button primary" disabled={busy||item.closed}>Отправить домашнюю работу</button>{item.submission&&<p>Последняя отправка: {dateLabel(item.submission.submittedAt)}. Можно исправить до оценки или срока.</p>}
    </form>}</GlassCard></>}

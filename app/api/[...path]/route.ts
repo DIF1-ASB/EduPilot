@@ -36,6 +36,8 @@ import { toLegacyAttempt } from '@/lib/assessment/projection';
 import {assessmentTemplate} from '@/lib/assessment/generation';
 import {validateAssessment} from '@/lib/assessment/schema';
 import {notesInputSchema,validateNotes} from '@/lib/notes/schema';
+import {validateNotesArticle} from '@/lib/notes/article';
+function checkArticle(raw:unknown,ready:boolean,subject:string){try{validateNotesArticle(raw,{ready,subject});}catch{fail(400,'Проверьте структуру и формулы конспекта. Готовый текст должен содержать 700–1100 слов и не менее четырёх разделов, без анкеты вопросов.');}}
 export const dynamic = "force-dynamic";
 const json = (
   body: unknown,
@@ -201,8 +203,10 @@ async function handle(req: Request) {
         const data = materialInput.parse(await readJson(req));
         if (!isCreationEnabled(data.type)) fail(410, mediaCreationDisabledMessage);
         if (!canCreateMaterial(actor,data.type)) fail(403,'Доступно только преподавателям.');
-        if(data.type==='notes')validateNotes(data.contentJson,{ready:data.status==='ready'});
-        else if('schemaVersion' in data.contentJson&&data.contentJson.kind==='notes')fail(400,'Неверный тип конспекта.');
+        if(data.type==='notes'){
+          if('schemaVersion' in data.contentJson&&data.contentJson.kind==='notes-article')checkArticle(data.contentJson,data.status==='ready',data.subject);
+          else validateNotes(data.contentJson,{ready:data.status==='ready'});
+        }else if('schemaVersion' in data.contentJson&&['notes','notes-article'].includes(data.contentJson.kind))fail(400,'Неверный тип конспекта.');
         if('schemaVersion' in data.contentJson&&data.contentJson.kind==='assessment'){
           if(!['test','worksheet'].includes(data.type))fail(400,'Структура вопросов доступна для контрольной или рабочего листа.');
           validateAssessment(data.contentJson,{publishable:data.status==='ready'});
@@ -290,6 +294,10 @@ async function handle(req: Request) {
         const data = materialInput.parse(await readJson(req));
         if(actor.role==='student'&&!canCreateMaterial(actor,data.type)) fail(403,'Доступно только преподавателям.');
         const priorContent=material.contentJson as any;
+        if(priorContent?.kind==='notes-article'&&(!('schemaVersion' in data.contentJson)||data.contentJson.kind!=='notes-article'))fail(400,'Нельзя заменить связный конспект другим форматом.');
+        if('schemaVersion' in data.contentJson&&data.contentJson.kind==='notes-article'){
+          if(data.type!=='notes')fail(400,'Неверный тип конспекта.');checkArticle(data.contentJson,data.status==='ready',data.subject);
+        }
         if(material.type==='notes'&&priorContent?.schemaVersion===2&&priorContent.kind==='notes')validateNotes(data.contentJson,{ready:data.status==='ready'});
         if('schemaVersion' in data.contentJson&&data.contentJson.kind==='notes'){
           if(data.type!=='notes')fail(400,'Неверный тип конспекта.');

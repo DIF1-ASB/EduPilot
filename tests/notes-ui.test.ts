@@ -4,10 +4,10 @@ import {AppContext} from '../components/app-context';import {createNotesDraft} f
 const render=(child:ReturnType<typeof createElement>)=>renderToStaticMarkup(createElement(AppContext.Provider,{value:{user:{id:'student',role:'student',settings:{}},navigate:()=>{},refresh:async()=>{},ai:{mode:'mock'}}},child));
 const material=():MaterialRecord=>({id:'notes',type:'notes',title:'Мой конспект',subject:'Математика',grade:7,status:'draft',version:1,contentJson:createNotesDraft(),metadataJson:{},createdAt:'',updatedAt:'',canEdit:true});
 describe('specialized notes UI',()=>{
- it('has independent topic/volume/source fields and manual creation, not lesson fields',()=>{
+ it('has a short topic-based article form and manual creation, not lesson fields',()=>{
   const html=render(createElement(NotesForm,{onCreated:()=>{}}));
-  for(const text of ['Тема','Объём','Исходный текст','Заполнить вручную'])expect(html).toContain(text);
-  for(const name of ['duration','equipment','lessonType'])expect(html).not.toContain('name="'+name+'"');
+  for(const text of ['Тема','Предмет','Класс','Уточнения','Заполнить вручную'])expect(html).toContain(text);
+  for(const name of ['volume','sourceText','duration','equipment','lessonType'])expect(html).not.toContain('name="'+name+'"');
  });
  it('renders legacy notes without minutes or rewriting and v2 with proper editable blocks',()=>{
   const legacy={...material(),contentJson:{demo:false,totalDuration:45,sections:[{id:'old',title:'Тема',body:'Исторический текст',duration:15}]}};

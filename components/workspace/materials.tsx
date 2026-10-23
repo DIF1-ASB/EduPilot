@@ -33,6 +33,7 @@ import {CreateOnlineTest} from '../assessment/create-test';
 import {OnlineTestEditor} from '../assessment/online-editor';
 import {AssignedQuizPage} from '../assignments/list';
 import {NotesEditor} from '../notes/editor';
+import {NotesArticlePreview} from '../notes/article-preview';
 import { slidePalette } from "@/lib/slide-theme";
 import {
   subjects,
@@ -846,6 +847,7 @@ export function MaterialEditor({ id }: { id: string }) {
     );
   if (!material) return <div className="skeleton-list" />;
   const m = material;
+  if(m.type==='notes'&&m.canEdit===false&&'schemaVersion' in m.contentJson&&m.contentJson.kind==='notes-article')return <AnimatedPage><header className="page-heading"><h1>{m.title}</h1></header><GlassCard><NotesArticlePreview document={m.contentJson}/></GlassCard></AnimatedPage>;
   if(m.type==='notes'&&m.canEdit!==false)return <NotesEditor key={m.id} material={m} onSave={async data=>{const result=await api<MaterialRecord>('materials/'+id,'PATCH',data);setMaterial(result);current.current=result;return result;}}/>;
   const download = async (format: string,withAnswers=answers) => {
     await save();

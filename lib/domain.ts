@@ -253,7 +253,7 @@ export function withoutAnswers<
   T extends { contentJson: unknown; metadataJson: unknown },
 >(m: T): T {
   const parsed=parseMaterialContent(m.contentJson);
-  if('schemaVersion' in parsed&&parsed.kind==='notes')return {...m,contentJson:parsed,metadataJson:{}};
+  if('schemaVersion' in parsed&&(parsed.kind==='notes'||parsed.kind==='notes-article'))return {...m,contentJson:parsed,metadataJson:{}};
   const c = materialSections(parsed, false);
   return {
     ...m,
