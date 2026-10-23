@@ -237,6 +237,7 @@ async function handle(req: Request) {
           fail(403, "Материал доступен только для чтения.");
       }
       if (action === "export" && method === "GET") {
+        if(material.type==='test')fail(410,'Контрольные выполняются только на сайте. Word/PDF для них отключены.');
         if(!own&&actor.role==='student')fail(409,'Откройте нужное назначение и скачайте доступный экземпляр там.');
         const format = new URL(req.url).searchParams.get("format") || "docx";
         if (!["docx", "pdf", "pptx"].includes(format))

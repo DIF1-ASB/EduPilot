@@ -21,6 +21,7 @@ import { materialSections, parseMaterialContent } from './materials/content';
 import {buildAllAnswerSheets} from './assessment/sheet';
 import {exportAnswerSheetsDocx} from './assessment/export-docx';
 import {exportAnswerSheetsPdf} from './assessment/export-pdf';
+import {fail} from './security';
 
 async function getImage(section: Section, ownerId: string) {
   if (!section.imageId) return null;
@@ -44,6 +45,7 @@ export async function exportMaterial(
   format: string,
   teacher: boolean,
 ) {
+  if(material.type==='test'&&['docx','pdf'].includes(format))fail(410,'Контрольные выполняются только на сайте. Word/PDF для них отключены.');
   if(['test','worksheet'].includes(material.type)&&['docx','pdf'].includes(format)){
     const sheets=buildAllAnswerSheets(material,teacher);
     return {bytes:format==='docx'?await exportAnswerSheetsDocx(sheets):await exportAnswerSheetsPdf(sheets),mime:format==='docx'?'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'application/pdf'};

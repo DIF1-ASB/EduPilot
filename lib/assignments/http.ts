@@ -2,9 +2,6 @@ import {readJson,fail} from '../security';
 import type {Actor} from '../materials/policy';
 import {authorizedAssignment,createAssignment,listAssignments,readAssignment,updateAssignment,submitHomework,releaseSolutions} from './service';
 import {startAttempt,loadAttempt,saveDraft,submitAttempt,reviewAttempt,getStudentAttemptView,type PrivateAttempt} from '../assessment/service';
-import {getAssignmentSheets} from './sheets';
-import {exportAnswerSheetsDocx} from '../assessment/export-docx';
-import {exportAnswerSheetsPdf} from '../assessment/export-pdf';
 import {exportMaterial} from '../export';
 const json=(body:unknown,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store'}});
 function teacherAttempt(attempt:PrivateAttempt){
@@ -35,9 +32,7 @@ export async function handleAssignmentRequest(req:Request,actor:Actor):Promise<R
    const result=await exportMaterial({...assignment.material,title:assignment.title,contentJson:assignment.snapshotJson??assignment.material.contentJson},format,actor.role==='teacher'&&url.searchParams.get('answers')==='true');
    return new Response(result.bytes as BodyInit,{headers:{'Content-Type':result.mime,'Content-Disposition':`attachment; filename="EduPilot.${format}"; filename*=UTF-8''${encodeURIComponent(assignment.title)}.${format}`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
   }
-  const sheets=await getAssignmentSheets(actor,id,{attemptId:url.searchParams.get('attemptId'),includeTeacherKeys:url.searchParams.get('answers')==='true'});
-  const bytes=format==='docx'?await exportAnswerSheetsDocx(sheets):await exportAnswerSheetsPdf(sheets);
-  return new Response(bytes as BodyInit,{headers:{'Content-Type':format==='docx'?'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'application/pdf','Content-Disposition':`attachment; filename="EduPilot.${format}"; filename*=UTF-8''${encodeURIComponent(sheets[0].title)}.${format}`,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
+  fail(410,'Контрольные выполняются только на сайте. Word/PDF для них отключены.');
  }
  if(action==='attempts'){
   if(parts.length===3&&method==='GET'){

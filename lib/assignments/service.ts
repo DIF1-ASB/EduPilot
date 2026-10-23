@@ -3,6 +3,7 @@ import { db } from '../database';
 import { fail } from '../security';
 import { parseMaterialContent, materialSections } from '../materials/content';
 import { validateAssessment } from '../assessment/schema';
+import {validateOnlineTest,canonicalizeQuizOptionIds} from '../assessment/online';
 import type { Actor } from '../materials/policy';
 import type { AssignmentPolicy,AssignmentStudentDTO,TeacherAssignmentDTO,SubmissionDTO } from './contracts';
 import type { Prisma } from '@prisma/client';
@@ -58,6 +59,11 @@ export async function createAssignment(actor:Actor,classId:string,raw:unknown){
   if(input.materialVersion!==material.version)fail(409,'Материал изменён. Проверьте новую редакцию.');
   if(!input.keysConfirmed)fail(422,'Подтвердите ключи и критерии.');
   snapshot=validateAssessment(snapshot,{publishable:true});
+  const metadata=material.metadataJson as Record<string,unknown>;
+  if(metadata.onlineTestVersion===1){
+   if(metadata.keysConfirmed!==true)fail(422,'Проверьте и подтвердите текущую редакцию теста в редакторе.');
+   try{snapshot=canonicalizeQuizOptionIds(validateOnlineTest(snapshot));}catch{fail(422,'Онлайн-тест должен содержать 5–30 вопросов с четырьмя вариантами, одним ключом и одним баллом.');}
+  }
  }
  const id=crypto.randomUUID();
  // Conditional INSERT closes the material edit/class ownership race without rewriting the source.

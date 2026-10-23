@@ -29,6 +29,8 @@ import {
 import { api } from "@/lib/client";
 import { materialSections } from '@/lib/materials/content';
 import {AssessmentEditor,convertLegacyAssessment} from '../assessment/editor';
+import {CreateOnlineTest} from '../assessment/create-test';
+import {OnlineTestEditor} from '../assessment/online-editor';
 import {AssignedQuizPage} from '../assignments/list';
 import {NotesEditor} from '../notes/editor';
 import { slidePalette } from "@/lib/slide-theme";
@@ -119,6 +121,7 @@ export function ToolPage({ type }: { type: ToolType }) {
       />
     );
   if(user.role==='student'&&type!=='notes')return <EmptyState icon={<FileText/>} title="Доступно преподавателю" description="Для личных заметок используйте отдельный конспект. Назначенные работы находятся в разделах заданий." action={<button className="button" onClick={()=>navigate('/notes/new')}>Создать конспект</button>}/>;
+  if(type==='test')return <CreateOnlineTest onCreated={id=>navigate('/materials/'+id)}/>;
   const upload = async (file?: File) => {
     if (!file) return;
     if (files.length >= 5) {
@@ -853,7 +856,7 @@ export function MaterialEditor({ id }: { id: string }) {
       const url=URL.createObjectURL(await response.blob()),link=document.createElement('a');link.href=url;link.download=m.title+'.'+format;link.click();setTimeout(()=>URL.revokeObjectURL(url),3000);toast.success('Файл подготовлен');
     }catch(e){toast.error((e as Error).message);}
   };
-  if('schemaVersion' in m.contentJson&&m.canEdit!==false)return <><p className={saveError?'form-error':'save-status'} role="status">{saveError||(saving?'Сохранение…':dirty?'Есть несохранённые изменения':'Все изменения сохранены')}</p><AssessmentEditor material={m} onChange={change} onSave={save} onPreview={()=>{}} onDownload={download}/></>;
+  if('schemaVersion' in m.contentJson&&m.contentJson.kind==='assessment'&&m.canEdit!==false)return <><p className={saveError?'form-error':'save-status'} role="status">{saveError||(saving?'Сохранение…':dirty?'Есть несохранённые изменения':'Все изменения сохранены')}</p>{m.metadataJson.onlineTestVersion===1?<OnlineTestEditor material={m} onChange={change} onSave={save}/>:<AssessmentEditor material={m} onChange={change} onSave={save} onPreview={()=>{}} onDownload={m.type==='test'?undefined:download}/>}</>;
   if ('schemaVersion' in m.contentJson) return (
     <AnimatedPage><header className="page-heading"><h1>{m.title}</h1></header>
       <GlassCard>{materialSections(m.contentJson, m.canEdit !== false).sections.map(s=>(
@@ -941,14 +944,14 @@ export function MaterialEditor({ id }: { id: string }) {
       </header>
       <div className="editor-toolbar">
         <div className="button-row">
-          <button className="button secondary" onClick={() => download("docx")}>
+          {m.type!=='test'&&<><button className="button secondary" onClick={() => download("docx")}>
             <Download size={14} />
             DOCX
           </button>
           <button className="button secondary" onClick={() => download("pdf")}>
             <Download size={14} />
             PDF
-          </button>
+          </button></>}
           {visual && (
             <button
               className="button secondary"
@@ -958,13 +961,13 @@ export function MaterialEditor({ id }: { id: string }) {
               PPTX
             </button>
           )}
-          <button
+          {m.type!=='test'&&<button
             className="icon-button"
             aria-label="Печать"
             onClick={() => window.print()}
           >
             <Printer size={17} />
-          </button>
+          </button>}
           {isCreationEnabled(m.type) && <button
             className="icon-button"
             aria-label="Создать копию"

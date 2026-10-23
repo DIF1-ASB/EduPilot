@@ -20,7 +20,6 @@ import { toast } from "sonner";
 import { api } from "@/lib/client";
 import { useApp } from "../app-context";
 import { AnimatedPage, EmptyState, GlassCard } from "../ui/edupilot";
-import "katex/dist/katex.min.css";
 import { ChatComposer } from "./composer";
 export function ChatMessage({ message }: { message: any }) {
   const { user } = useApp();

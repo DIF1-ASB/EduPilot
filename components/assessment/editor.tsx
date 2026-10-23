@@ -53,7 +53,7 @@ export function AssessmentEditor({material,onChange,onSave,onPreview,onDownload}
    <button className="button secondary" onClick={()=>preview('blank')}>Бланк ученика</button><button className="button secondary" onClick={()=>preview('keys')}>Ключи преподавателя</button>
    <button className="button primary" onClick={()=>void onSave()}>Сохранить</button>
    {onDownload&&['docx','pdf'].map(format=><button className="button secondary" key={format} onClick={()=>onDownload(format,mode==='keys')}>Скачать {format.toUpperCase()}</button>)}
-   {mode!=='edit'&&<button className="button secondary" onClick={()=>window.print()}>Печать</button>}
+   {mode!=='edit'&&material.type!=='test'&&<button className="button secondary" onClick={()=>window.print()}>Печать</button>}
   </div>
   {error&&<p role="alert" className="form-error">{error}</p>}
   {mode==='edit'?<>

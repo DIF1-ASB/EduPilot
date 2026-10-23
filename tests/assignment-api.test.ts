@@ -24,7 +24,7 @@ describe('assignment HTTP boundary',()=>{
   expect(await f.client.quizSession.count()).toBe(before);expect(await f.client.quizAttempt.count()).toBe(attempts);
   const detail=await f.call('materials/'+materialId,'GET',undefined,f.student.cookie);expect(detail.status).toBe(200);const ref:any=await detail.json();
   expect(ref.assignments).toEqual([{id:assignmentId,title:'Назначение',kind:'test'}]);expect(JSON.stringify(ref)).not.toContain('PRIVATE_BEFORE_START');noSecret(ref);
-  expect((await f.call(`materials/${materialId}/export?answers=true&format=docx`,'GET',undefined,f.student.cookie)).status).toBe(409);
+  expect((await f.call(`materials/${materialId}/export?answers=true&format=docx`,'GET',undefined,f.student.cookie)).status).toBe(410);
   const second=await f.call(`classes/${classId}/assignment`,'POST',body(),f.teacher.cookie);expect(second.status).toBe(201);
   const multiple:any=await(await f.call('materials/'+materialId,'GET',undefined,f.student.cookie)).json();expect(multiple.assignments).toHaveLength(2);expect(multiple).not.toHaveProperty('redirect');
  });
@@ -35,7 +35,7 @@ describe('assignment HTTP boundary',()=>{
   expect((await f.call(`assignments/${assignmentId}/attempts/${attemptId}`,'GET',undefined,f.outsider.cookie)).status).toBe(404);
   expect((await f.call(`assignments/${assignmentId}/attempts/${attemptId}/draft`,'PATCH',{version:1,answers:{q:'unknown'}},f.student.cookie)).status).toBe(400);
   const draft=await f.call(`assignments/${assignmentId}/attempts/${attemptId}/draft`,'PATCH',{version:1,answers:{q:'b'}},f.student.cookie);expect(draft.status).toBe(200);noSecret(await draft.json());
-  expect((await f.call(`assignments/${assignmentId}/export?attemptId=${attemptId}&format=pdf&answers=true`,'GET',undefined,f.student.cookie)).status).toBe(409);
+  expect((await f.call(`assignments/${assignmentId}/export?attemptId=${attemptId}&format=pdf&answers=true`,'GET',undefined,f.student.cookie)).status).toBe(410);
   expect((await f.call(`assignments/${assignmentId}/attempts/${attemptId}/submit`,'POST',{version:2,answers:{}},f.student.cookie)).status).toBe(422);
   const submit=await f.call(`assignments/${assignmentId}/attempts/${attemptId}/submit`,'POST',{version:2,answers:{q:'b'}},f.student.cookie);expect(submit.status).toBe(200);const result:any=await submit.json();expect(result.result.score).toBe(0);noSecret(result);
   const retry=await f.call(`assignments/${assignmentId}/attempts/${attemptId}/submit`,'POST',{version:1,answers:{q:'a'}},f.student.cookie);expect((await retry.json() as any).result.score).toBe(0);

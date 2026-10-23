@@ -3225,3 +3225,8 @@ b {
  .answer-sheet-preview :is(p,.answer-line) { orphans:2; widows:2; }
  .sheet-teacher-keys { border:0; margin-top:0; }
 }
+/* Online learning drafts keep the workspace's existing visual language. */
+.online-test-editor fieldset { min-width: 0; }
+.online-test-editor .teacher-explanation { margin-top: 1rem; padding: 1rem; border-left: 2px solid var(--accent, #5ce6d3); }
+.generation-status article { display: grid; gap: .75rem; }
+.online-test-editor .markdown, .online-test-editor .katex-display { overflow-x: auto; }

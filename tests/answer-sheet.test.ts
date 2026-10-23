@@ -27,16 +27,17 @@ describe('assignment sheet authorization and snapshot',()=>{
  const start=await f.call(`assignments/${id}/start`,'POST',{requestId:crypto.randomUUID()},f.student.cookie);const dto:any=await start.json();attemptId=dto.id;expect(dto.instructions).toBe('Решите самостоятельно');expect(dto.variantLabel).toMatch(/Первый|Второй/);
  await f.client.material.update({where:{id:m.id},data:{contentJson:{demo:false,sections:[{id:'changed',title:'CHANGED',body:'CHANGED'}]}}});});
  afterAll(async()=>{await f?.close();});
- it('rejects active/foreign attempts and ignores a student request for keys even after release',async()=>{
+ it('keeps historical sheets private and blocks control downloads even after release',async()=>{
   const {getAssignmentSheets}=await import('../lib/assignments/sheets');
-  await expect(getAssignmentSheets(f.student,id,{attemptId,includeTeacherKeys:true})).rejects.toMatchObject({status:409});
+  await expect(getAssignmentSheets(f.student,id,{attemptId,includeTeacherKeys:true})).rejects.toMatchObject({status:410});
   await expect(getAssignmentSheets(f.outsider,id,{attemptId,includeTeacherKeys:true})).rejects.toMatchObject({status:404});
-  await expect(getAssignmentSheets(f.student,id,{attemptId:'foreign',includeTeacherKeys:true})).rejects.toMatchObject({status:404});
+  await expect(getAssignmentSheets(f.student,id,{attemptId:'foreign',includeTeacherKeys:true})).rejects.toMatchObject({status:410});
   const dto:any=await(await f.call(`assignments/${id}/attempts/${attemptId}`,'GET',undefined,f.student.cookie)).json();const q=dto.questions[0];expect((await f.call(`assignments/${id}/attempts/${attemptId}/submit`,'POST',{version:dto.version,answers:{[q.id]:q.kind==='numeric'?'0':'Решение'}},f.student.cookie)).status).toBe(200);
-  const sheets=await getAssignmentSheets(f.student,id,{attemptId,includeTeacherKeys:true});expect(sheets).toHaveLength(1);expect(sheets[0].blocks.map(b=>b.id)).toEqual([q.id]);expect(sheets[0].instructions).toBe('Решите самостоятельно');expect(JSON.stringify(sheets)).not.toContain('CANARY_KEY');expect(sheets[0]).not.toHaveProperty('teacherKeys');
-  expect((await f.call(`assignments/${id}/release`,'POST',{version:1},f.teacher.cookie)).status).toBe(200);expect(JSON.stringify(await getAssignmentSheets(f.student,id,{attemptId,includeTeacherKeys:true}))).not.toContain('CANARY_KEY');
-  const teacher=await getAssignmentSheets(f.teacher,id,{includeTeacherKeys:true});expect(teacher).toHaveLength(2);expect(JSON.stringify(teacher)).toContain('CANARY_KEY');expect(JSON.stringify(teacher)).not.toContain('CHANGED');
-  for(const actor of [f.student,f.teacher]){const download=await f.call(`assignments/${id}/export?format=docx&answers=true&attemptId=${attemptId}`,'GET',undefined,actor.cookie);expect(download.status).toBe(200);const zip=await JSZip.loadAsync(await download.arrayBuffer()),xml=await zip.file('word/document.xml')!.async('string');expect(xml.includes('CANARY_KEY')).toBe(actor.role==='teacher');expect(xml).toContain('ФИО');expect(xml).not.toContain('CHANGED');}
+  await expect(getAssignmentSheets(f.student,id,{attemptId,includeTeacherKeys:true})).rejects.toMatchObject({status:410});
+  expect((await f.call(`assignments/${id}/release`,'POST',{version:1},f.teacher.cookie)).status).toBe(200);
+  await expect(getAssignmentSheets(f.teacher,id,{includeTeacherKeys:true})).rejects.toMatchObject({status:410});
+  const row=await f.client.assignment.findUniqueOrThrow({where:{id}});expect(JSON.stringify(row.snapshotJson)).toContain('CANARY_KEY');expect(JSON.stringify(row.snapshotJson)).not.toContain('CHANGED');
+  for(const actor of [f.student,f.teacher]){const download=await f.call(`assignments/${id}/export?format=docx&answers=true&attemptId=${attemptId}`,'GET',undefined,actor.cookie);expect(download.status).toBe(410);expect(await download.text()).not.toContain('CANARY_KEY');}
  });
  it('keeps original variants and configured lines on a blank material download and returns actionable PDF errors',async()=>{
   const document=content();document.variants[0].questions[0].answerLines=12;

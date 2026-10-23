@@ -1,7 +1,2 @@
-'use client';
-import {useState} from 'react';
-export function AssignmentDownloads({assignmentId,attemptId,teacher=false}:{assignmentId:string,attemptId?:string,teacher?:boolean}){
- const [keys,setKeys]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState('');
- const download=async(format:string)=>{setBusy(true);setError('');try{const params=new URLSearchParams({format,answers:String(teacher&&keys)});if(attemptId)params.set('attemptId',attemptId);const response=await fetch(`/api/assignments/${assignmentId}/export?${params}`);if(!response.ok){const data=await response.json() as {error?:string};throw Error(data.error||'Не удалось скачать бланк.');}const url=URL.createObjectURL(await response.blob()),link=document.createElement('a');link.href=url;link.download=`EduPilot.${format}`;link.click();setTimeout(()=>URL.revokeObjectURL(url),3000);}catch(e){setError((e as Error).message);}finally{setBusy(false);}};
- return <div className="assignment-downloads section-space">{teacher&&<label className="check-field"><input type="checkbox" checked={keys} onChange={e=>setKeys(e.target.checked)}/>Добавить ключи отдельным разделом</label>}<div className="button-row">{['docx','pdf'].map(format=><button key={format} className="button secondary" disabled={busy} onClick={()=>void download(format)}>Скачать бланк {format.toUpperCase()}</button>)}</div>{error&&<p role="alert" className="form-error">{error}</p>}</div>;
-}
+/** Compatibility slot for historical test screens. Control tests are online-only. */
+export function AssignmentDownloads(_props:{assignmentId:string;attemptId?:string;teacher?:boolean}){return null;}

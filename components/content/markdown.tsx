@@ -4,6 +4,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeHighlight from 'rehype-highlight';
 import {normalizeMathMarkdown} from '@/lib/content/math';
+import 'katex/dist/katex.min.css';
 
 export function MarkdownContent({source, inline = false}: {source: string; inline?: boolean}) {
   return <ReactMarkdown
