@@ -1,6 +1,7 @@
 import {requestCompletion,type CompletionOptions} from './ai/client';
 import {buildOnlineTestMessages,parseOnlineTestReply,onlineTestDraft,type OnlineTestInput} from './assessment/online';
 import {buildArticleMessages,parseArticleReply,type NotesArticleInput,type NotesArticleDocument} from './notes/article';
+import {jobsAvailable} from './generation/service';
 import { config } from "./runtime";
 import {
   DocumentContent,
@@ -219,6 +220,7 @@ export function aiStatus() {
     mode: live ? "live" : "mock",
     configured: live,
     verified: false,
+    jobsAvailable: jobsAvailable(),
     text: live,
     vision: live && config("AI_SUPPORTS_VISION") === "true",
     documents: live && config("AI_SUPPORTS_DOCUMENTS") === "true",

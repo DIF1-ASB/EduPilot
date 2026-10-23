@@ -1,7 +1,6 @@
 import {z} from 'zod';
 import type {ConversationMessage} from '../ai';
-import {assertSafeMathText} from '../content/math';
-import {mathPrompt} from '../assessment/online';
+import {assertSafeMathText,mathPrompt} from '../content/math';
 export const notesArticleInputSchema=z.object({title:z.string().trim().min(2).max(200),subject:z.string().trim().min(1).max(100),grade:z.coerce.number().int().min(1).max(11),clarifications:z.string().max(4000).default('')}).strict();
 export type NotesArticleInput=z.infer<typeof notesArticleInputSchema>;
 const articleSchema=z.object({schemaVersion:z.literal(3),kind:z.literal('notes-article'),demo:z.boolean(),bodyMarkdown:z.string().max(30000)}).strict();

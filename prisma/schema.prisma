@@ -29,6 +29,7 @@ model User {
   learningTasks LearningTask[]
   assessmentAttempts AssessmentAttempt[]
   assessmentStartRequests AssessmentStartRequest[]
+  generationJobs GenerationJob[]
 }
 model UserSettings {
   userId String @id
@@ -88,7 +89,30 @@ model Material {
   assignments Assignment[]
   attempts QuizAttempt[]
   quizSessions QuizSession[]
+  generationResults GenerationJob[]
   @@index([userId,type,updatedAt])
+}
+model GenerationJob {
+  id String @id
+  ownerId String
+  requestId String
+  kind String
+  state String @default("queued")
+  inputHash String
+  inputJson Json
+  resultMaterialId String?
+  errorCode String?
+  attemptCount Int @default(0)
+  leaseToken String?
+  leaseUntil DateTime?
+  deadlineAt DateTime?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+  owner User @relation(fields:[ownerId],references:[id],onDelete:Cascade)
+  resultMaterial Material? @relation(fields:[resultMaterialId],references:[id],onDelete:SetNull)
+  @@unique([ownerId,requestId])
+  @@index([ownerId,createdAt])
+  @@index([state,createdAt])
 }
 model FileAttachment {
   id String @id @default(cuid())

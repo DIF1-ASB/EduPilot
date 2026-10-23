@@ -1,4 +1,5 @@
 /** Normalize presentation only: never rewrite mathematical meaning or code. */
+export const mathPrompt='Формулы: $...$ внутри строки, $$ на отдельных строках для блочных. Русский текст внутри формул оборачивай в \\text{...}. В JSON экранируй каждый обратный слеш вторым слешем. Не включай скрытые рассуждения.';
 function normalizeProse(source: string): string {
   return source
       .replace(/\\\[([\s\S]*?)\\\]/g, (_, body: string) => `\n$$\n${body.trim()}\n$$\n`)

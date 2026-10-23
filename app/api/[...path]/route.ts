@@ -31,6 +31,7 @@ import { exportMaterial } from "@/lib/export";
 import { canCreateMaterial, canEditMaterial, type Actor } from '@/lib/materials/policy';
 import { createAssignment, listAssignments, submitHomework } from '@/lib/assignments/service';
 import { handleAssignmentRequest } from '@/lib/assignments/http';
+import {handleGenerationRequest} from '@/lib/generation/http';
 import { toLegacyAttempt } from '@/lib/assessment/projection';
 import {assessmentTemplate} from '@/lib/assessment/generation';
 import {validateAssessment} from '@/lib/assessment/schema';
@@ -120,6 +121,8 @@ async function handle(req: Request) {
     const user = await requireUser(req);
     const actor:Actor={id:user.id,role:user.role==='teacher'?'teacher':'student'};
     await rateLimit(`request:${user.id}`, 240, 60);
+    const generationResponse=await handleGenerationRequest(req,actor);
+    if(generationResponse)return generationResponse;
     const assignmentResponse=await handleAssignmentRequest(req,actor);
     if(assignmentResponse)return assignmentResponse;
     const teacher = () => {
