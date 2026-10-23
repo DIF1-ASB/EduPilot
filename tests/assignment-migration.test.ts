@@ -20,6 +20,9 @@ describe('additive assignment migration',()=>{
   raw.exec(migration);
   expect(raw.prepare('SELECT id,classId,materialId,title,dueDate FROM Assignment').all()).toEqual(before);
   expect(raw.prepare('SELECT kind,maxAttempts,durationMinutes,answerPolicy,version,snapshotJson FROM Assignment').get()).toEqual({kind:'homework',maxAttempts:1,durationMinutes:45,answerPolicy:'manual',version:1,snapshotJson:null});
+  // Historical migration assertions stay above; the current generated client
+  // subsequently runs against the current additive schema, not the 17 Oct schema.
+  for(const name of readdirSync('prisma/migrations').filter(n=>/^\d/.test(n)&&n>'202610170001_assignments').sort())raw.exec(readFileSync(`prisma/migrations/${name}/migration.sql`,'utf8'));
   const client=new PrismaClient({adapter:new PrismaBetterSQLite3({url:'file:'+path.replaceAll('\\','/')})});
   try{
     const start=new Date('2026-10-17T12:00:00Z');

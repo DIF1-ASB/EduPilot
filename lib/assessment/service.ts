@@ -9,6 +9,7 @@ import {gradeVariant,hasAnswers,type GradeResult} from './grading';
 import {canRevealSolutions,toStudentAttempt} from './projection';
 import type {AttemptDTO} from './public';
 import type {AssessmentAttempt} from '@prisma/client';
+import {buildOptionOrder} from './presentation';
 export type Clock=()=>Date;
 export type PrivateAttempt=AssessmentAttempt&{assignment:AssignmentRow,snapshot:AssessmentDocument};
 async function readPrivateAttempt(actor:Actor,assignmentId:string,attemptId:string):Promise<PrivateAttempt>{
@@ -29,7 +30,7 @@ export async function startAttempt(actor:Actor,assignmentId:string,raw:unknown,c
  for(const active of assignment.assessmentAttempts.filter(a=>a.studentId===actor.id&&a.status==='in_progress'&&a.expiresAt<=clock()))await expireAttempt(actor,assignmentId,active.id,clock);
  const snapshot=validateAssessment(assignment.snapshotJson,{publishable:true});
  const random=new Uint32Array(1);crypto.getRandomValues(random);const variant=snapshot.variants[random[0]%snapshot.variants.length];
- const statements=buildAdmissionBatch({id:crypto.randomUUID(),assignmentId,studentId:actor.id,requestId:parsed.data.requestId,variantId:variant.id,version:assignment.version,now:clock()});
+ const statements=buildAdmissionBatch({id:crypto.randomUUID(),assignmentId,studentId:actor.id,requestId:parsed.data.requestId,variantId:variant.id,version:assignment.version,now:clock(),optionOrder:buildOptionOrder(snapshot,variant.id)});
  const result=await runAssessmentBatch(statements),id=result.at(-1)?.rows[0]?.id;
  if(typeof id!=='string')fail(409,'Нельзя начать: работа закрыта, истёк срок, изменены настройки или исчерпаны попытки.');
  return loadAttempt(actor,assignmentId,id,clock);

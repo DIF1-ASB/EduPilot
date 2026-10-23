@@ -191,6 +191,7 @@ model AssessmentAttempt {
   status String
   version Int @default(1)
   draftAnswersJson Json
+  optionOrderJson Json @default("{}")
   submittedAnswersJson Json?
   submittedAt DateTime?
   completionKind String?

@@ -14,7 +14,7 @@ describe('server controlled solution disclosure',()=>{
  it('whitelists hidden results, including pending score and own answers',async()=>{
   const {assignment,done}=await finished();const view=await s.getStudentAttemptView(f.student,assignment.id,done.id,clock);
   hidden(view);expect(view.result).toMatchObject({score:null,autoScore:0,maxScore:5});expect(view.answers).toEqual({q:'b',o:'Мой ответ'});
-  expect(view.questions[0]).toEqual({id:'q',kind:'single',prompt:'Выбор',points:2,answerLines:1,options:[{id:'a',label:'Первый'},{id:'b',label:'Второй'}]});
+  expect({...view.questions[0],options:[...view.questions[0].options!].sort((a,b)=>a.id.localeCompare(b.id))}).toEqual({id:'q',kind:'single',prompt:'Выбор',points:2,answerLines:1,options:[{id:'a',label:'Первый'},{id:'b',label:'Второй'}]});
  });
  it('manually publishes only with no active work and permanently closes new starts/quota increases',async()=>{
   const assignment=await issued();const p=await s.startAttempt(f.student,assignment.id,{requestId:crypto.randomUUID()},clock);

@@ -16,14 +16,14 @@ export async function runAssessmentBatch(statements:SqlStatement[]):Promise<Batc
 // Never compare those representations lexically or rewrite historical values.
 export const epochSql=(column:string)=>`(CASE WHEN typeof(${column}) IN ('integer','real') THEN ${column} ELSE round((julianday(${column})-2440587.5)*86400000) END)`;
 export const sqlDate=(date:Date)=>date.toISOString().replace('Z','+00:00');
-export type AdmissionInput={id:string,assignmentId:string,studentId:string,requestId:string,variantId:string,version:number,now:Date};
+export type AdmissionInput={id:string,assignmentId:string,studentId:string,requestId:string,variantId:string,version:number,now:Date,optionOrder?:Record<string,string[]>};
 export function buildAdmissionBatch(input:AdmissionInput):SqlStatement[]{
  const {id,assignmentId,studentId,requestId,variantId,version,now}=input;
  const due=epochSql('a.dueDate');
  return [
-  {sql:`INSERT INTO AssessmentAttempt(id,assignmentId,studentId,number,startRequestId,variantId,startedAt,expiresAt,status,version,draftAnswersJson)
+  {sql:`INSERT INTO AssessmentAttempt(id,assignmentId,studentId,number,startRequestId,variantId,startedAt,expiresAt,status,version,draftAnswersJson,optionOrderJson)
    SELECT ?,a.id,?,COALESCE((SELECT MAX(number) FROM AssessmentAttempt WHERE assignmentId=a.id AND studentId=?),0)+1,?,?,?,
-   strftime('%Y-%m-%dT%H:%M:%f+00:00',min(?+a.durationMinutes*60000,COALESCE(${due},9000000000000000))/1000.0,'unixepoch'),'in_progress',1,'{}'
+   strftime('%Y-%m-%dT%H:%M:%f+00:00',min(?+a.durationMinutes*60000,COALESCE(${due},9000000000000000))/1000.0,'unixepoch'),'in_progress',1,'{}',?
    FROM Assignment a JOIN SchoolClass c ON c.id=a.classId JOIN User t ON t.id=c.teacherId AND t.role='teacher'
    JOIN Enrollment e ON e.classId=a.classId AND e.studentId=? JOIN User s ON s.id=e.studentId AND s.role='student'
    WHERE a.id=? AND a.version=? AND a.kind='test' AND a.closedAt IS NULL AND a.solutionsReleasedAt IS NULL
@@ -31,7 +31,7 @@ export function buildAdmissionBatch(input:AdmissionInput):SqlStatement[]{
    AND (SELECT COUNT(*) FROM AssessmentAttempt WHERE assignmentId=a.id AND studentId=?)<a.maxAttempts
    AND NOT EXISTS(SELECT 1 FROM AssessmentAttempt WHERE assignmentId=a.id AND studentId=? AND status='in_progress')
    AND NOT EXISTS(SELECT 1 FROM AssessmentStartRequest WHERE assignmentId=a.id AND studentId=? AND requestId=?)`,
-   params:[id,studentId,studentId,requestId,variantId,sqlDate(now),now.getTime(),studentId,assignmentId,version,now.getTime(),studentId,studentId,studentId,requestId]},
+   params:[id,studentId,studentId,requestId,variantId,sqlDate(now),now.getTime(),JSON.stringify(input.optionOrder??{}),studentId,assignmentId,version,now.getTime(),studentId,studentId,studentId,requestId]},
   {sql:`INSERT INTO AssessmentStartRequest(assignmentId,studentId,requestId,attemptId,createdAt)
    SELECT a.assignmentId,a.studentId,?,a.id,? FROM AssessmentAttempt a JOIN Assignment x ON x.id=a.assignmentId
    JOIN Enrollment e ON e.classId=x.classId AND e.studentId=a.studentId

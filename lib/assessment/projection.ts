@@ -3,6 +3,7 @@ import type {PrivateAttempt} from './service';
 import type {GradeResult} from './grading';
 import type {AttemptDTO,LegacyAttemptDTO,PublicQuestion} from './public';
 import type {Question,AnswerMap} from './schema';
+import {applyOptionOrder} from './presentation';
 type PolicyRow=Pick<AssignmentRow,'answerPolicy'|'maxAttempts'|'dueDate'|'solutionsReleasedAt'|'disclosureLockedAt'|'assessmentAttempts'>;
 export function canRevealSolutions(assignment:PolicyRow,attempt:Pick<PrivateAttempt,'status'|'studentId'>,usedAttempts:number,now:Date):boolean{
  if(attempt.status!=='graded'&&attempt.status!=='pending_review')return false;
@@ -23,7 +24,7 @@ export function toStudentAttempt(assignment:PolicyRow,attempt:PrivateAttempt,use
  return {id:attempt.id,assignmentId:attempt.assignmentId,number:attempt.number,variantId:attempt.variantId,status:attempt.status,version:attempt.version,
  startedAt:attempt.startedAt.toISOString(),expiresAt:attempt.expiresAt.toISOString(),submittedAt:attempt.submittedAt?.toISOString()??null,completionKind:attempt.completionKind,serverTime:now.toISOString(),
  instructions:attempt.snapshot.instructions,variantLabel:attempt.snapshot.variants.find(v=>v.id===attempt.variantId)!.label,
- answers:ownAnswers(attempt.submittedAnswersJson??attempt.draftAnswersJson),questions:attempt.snapshot.variants.find(v=>v.id===attempt.variantId)!.questions.map(toPublicQuestion),
+ answers:ownAnswers(attempt.submittedAnswersJson??attempt.draftAnswersJson),questions:applyOptionOrder(attempt.snapshot.variants.find(v=>v.id===attempt.variantId)!.questions.map(toPublicQuestion),attempt.optionOrderJson??{}),
  result:result?{score:result.score,autoScore:result.autoScore,maxScore:result.maxScore,
  teacherComments:reviews.map(m=>({questionId:m.questionId,comment:m.comment})),
  ...(canRevealSolutions(assignment,attempt,usedAttempts,now)?{solutions:result.items.map(i=>({questionId:i.questionId,correct:i.correct,answer:Array.isArray(i.answer)?[...i.answer]:i.answer,points:i.points,maxPoints:i.maxPoints,...(i.explanation?{explanation:i.explanation}:{})}))}:{})}:null};
