@@ -28,7 +28,7 @@ describe('stable student answer presentation',()=>{
    const oldAssignment=await assign.createAssignment(f.teacher,group.id,{materialId:m.id,materialVersion:1,keysConfirmed:true,title:'Историческая работа',kind:'test'}),now=new Date();
    const old=await f.client.assessmentAttempt.create({data:{assignmentId:oldAssignment.id,studentId:f.student.id,number:1,startRequestId:crypto.randomUUID(),variantId:'v1',startedAt:now,expiresAt:new Date(now.getTime()+60000),status:'in_progress',draftAnswersJson:{q0:'a'}}});
    const legacy=await service.getStudentAttemptView(f.student,oldAssignment.id,old.id);expect(legacy.questions[0].options?.map(o=>o.id)).toEqual(['a','b','c','d']);expect(legacy.answers.q0).toBe('a');
-   const final=await service.submitAttempt(f.student,oldAssignment.id,old.id,{version:1,answers:{q0:'a'}});expect((final.resultJson as any).score).toBe(1);expect(final.optionOrderJson).toEqual({});
+   const final=await service.submitAttempt(f.student,oldAssignment.id,old.id,{version:1,answers:{q0:'a'}});expect((final.resultJson as {score:number}).score).toBe(1);expect(final.optionOrderJson).toEqual({});
   }finally{await f.close();}
  },20000);
 });

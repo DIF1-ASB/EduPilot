@@ -1,3 +1,4 @@
+import type {AssessmentDocument} from '../lib/assessment/schema';
 import {describe,it,expect} from 'vitest';
 import {openPlatformFixture} from './helpers/platform';
 import {quizFixture,articleFixture} from './helpers/online-content';
@@ -14,11 +15,11 @@ describe('bounded persistent generation worker',()=>{
  it('makes one draft atomically, remains idempotent, and repairs invalid replies only once',async()=>{
   const f=await openPlatformFixture('generation-worker');try{await enabled(async()=>{
    const {createGeneration,getGeneration}=await import('../lib/generation/service');const {processGenerationBatch}=await import('../lib/generation/worker');const {MockAIProvider,InvalidGeneratedContent}=await import('../lib/ai');
-   class ValidProvider extends MockAIProvider {demo=false;async generateOnlineTest(){return quizFixture() as any;}}
+   class ValidProvider extends MockAIProvider {demo=false;async generateOnlineTest(){return quizFixture();}}
    const job=await createGeneration(f.teacher,{requestId:crypto.randomUUID(),kind:'test',input:{title:'Уравнения',subject:'Математика',grade:7}});
    expect(await processGenerationBatch({provider:new ValidProvider()})).toBe(1);expect(await processGenerationBatch({provider:new ValidProvider()})).toBe(0);
    const result=await getGeneration(f.teacher,job.id);expect(result.state).toBe('completed');expect(result.materialId).toBeTruthy();expect(await f.client.material.count()).toBe(1);expect((await f.client.material.findFirst())?.status).toBe('draft');
-   let calls=0;class InvalidProvider extends MockAIProvider {demo=false;async generateOnlineTest():Promise<any>{calls++;throw new InvalidGeneratedContent('{}','Количество вопросов');}}
+   let calls=0;class InvalidProvider extends MockAIProvider {demo=false;async generateOnlineTest():Promise<AssessmentDocument>{calls++;throw new InvalidGeneratedContent('{}','Количество вопросов');}}
    const bad=await createGeneration(f.teacher,{requestId:crypto.randomUUID(),kind:'test',input:{title:'Уравнения',subject:'Математика',grade:7}});await processGenerationBatch({provider:new InvalidProvider()});expect(calls).toBe(2);expect((await getGeneration(f.teacher,bad.id)).state).toBe('failed');expect(await f.client.material.count()).toBe(1);
   });}finally{await f.close();}
  });
@@ -27,11 +28,11 @@ describe('bounded persistent generation worker',()=>{
    const {createGeneration,cancelGeneration,getGeneration}=await import('../lib/generation/service');const {processGenerationBatch}=await import('../lib/generation/worker');const {MockAIProvider}=await import('../lib/ai');
    const jobs=[];for(const actor of [f.teacher,f.student,f.outsider])jobs.push(await createGeneration(actor,{requestId:crypto.randomUUID(),kind:'notes',input:{title:'Клетка',subject:'Биология',grade:6}}));
    let calls=0,release!:()=>void,started!:()=>void;const gate=new Promise<void>(r=>release=r),twoStarted=new Promise<void>(r=>started=r);
-   class SlowProvider extends MockAIProvider {demo=false;async generateArticle(){calls++;if(calls===2)started();await gate;return articleFixture() as any;}}
+   class SlowProvider extends MockAIProvider {demo=false;async generateArticle(){calls++;if(calls===2)started();await gate;return articleFixture();}}
    const workers=Promise.all([processGenerationBatch({provider:new SlowProvider()}),processGenerationBatch({provider:new SlowProvider()})]);await twoStarted;
    expect(calls).toBe(2);expect(await f.client.generationJob.count({where:{state:{in:['running','validating']}}})).toBe(2);
    const running=await f.client.generationJob.findFirst({where:{state:'running'}});const owner=[f.teacher,f.student,f.outsider].find(a=>a.id===running!.ownerId)!;await cancelGeneration(owner,running!.id);
-   class FastProvider extends MockAIProvider {demo=false;async generateArticle(){return articleFixture() as any;}}
+   class FastProvider extends MockAIProvider {demo=false;async generateArticle(){return articleFixture();}}
    const additional=await processGenerationBatch({provider:new FastProvider()});release();await workers;
    expect(additional).toBe(0);
    expect((await getGeneration(owner,running!.id)).state).toBe('cancelled');expect(await f.client.material.count()).toBe(1);

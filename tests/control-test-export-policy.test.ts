@@ -22,7 +22,7 @@ describe('online-only control tests',()=>{
    expect((await f.call(`classes/${group.id}/assignment`,'POST',payload,f.teacher.cookie)).status).toBe(422);
    await f.client.material.update({where:{id:m.id},data:{metadataJson:{onlineTestVersion:1,keysConfirmed:true}}});
    const response=await f.call(`classes/${group.id}/assignment`,'POST',payload,f.teacher.cookie);expect(response.status).toBe(201);
-   const saved=await f.client.assignment.findFirst(),snapshot:any=saved!.snapshotJson;expect(snapshot.variants[0].questions[0].options[0].id).toMatch(/^[0-9a-f-]{36}$/);expect((await f.client.material.findUnique({where:{id:m.id}}))!.contentJson).toEqual(source);
+   const saved=await f.client.assignment.findFirst(),snapshot=saved!.snapshotJson as unknown as ReturnType<typeof quizFixture>;expect(snapshot.variants[0].questions[0].options[0].id).toMatch(/^[0-9a-f-]{36}$/);expect((await f.client.material.findUnique({where:{id:m.id}}))!.contentJson).toEqual(source);
    await f.client.material.update({where:{id:m.id},data:{version:2,metadataJson:{onlineTestVersion:1,keysConfirmed:false}}});expect((await f.call(`classes/${group.id}/assignment`,'POST',payload,f.teacher.cookie)).status).toBe(409);
   }finally{await f.close();}
  },20000);

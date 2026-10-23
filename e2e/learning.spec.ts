@@ -2,8 +2,8 @@ import { test, expect, type Page } from '@playwright/test';
 
 async function register(page: Page, role: 'student' | 'teacher') {
   const response = await page.request.post('/api/auth/register', {
-    headers: { Origin: 'http://127.0.0.1:3000' },
-    data: { firstName: 'Учебный', lastName: 'Сценарий', email: `learning-${role}-${Date.now()}@test.example`, password: 'ExamplePass789!', confirmPassword: 'ExamplePass789!', role },
+    headers: { Origin: process.env.EDUPILOT_TEST_URL! },
+    data: { firstName: 'Учебный', lastName: 'Сценарий', email: `learning-${role}-${Date.now()}@example.invalid`, password: 'ExamplePass789!', confirmPassword: 'ExamplePass789!', role },
   });
   expect(response.status()).toBe(201);
 }
@@ -20,8 +20,8 @@ test('ученик проходит 5 + 10 заданий, видит разбо
   await expect(page.getByTestId('learning-counter')).toContainText('0 / 15');
   await expect(page.getByTestId('learning-question')).toBeVisible();
   await expect(page.getByTestId('learning-feedback')).toHaveCount(0);
-  await page.screenshot({path:'../work/learning-training.png',fullPage:true});
-  await page.locator('.learning-question-card').screenshot({path:'../work/learning-question.png'});
+  await page.screenshot({path:'output/playwright/learning-training.png',fullPage:true});
+  await page.locator('.learning-question-card').screenshot({path:'output/playwright/learning-question.png'});
   const firstPrompt = await page.getByTestId('learning-question').innerText();
   await page.getByLabel('Ваш ответ', { exact: true }).fill('0');
   await page.getByRole('button', { name: 'Проверить ответ', exact: true }).click();
@@ -44,12 +44,12 @@ test('ученик проходит 5 + 10 заданий, видит разбо
   await page.getByRole('button', { name: 'Мой прогресс', exact: true }).last().click();
   await expect(page.getByTestId('learning-accuracy')).toContainText('0 / 15');
   await expect(page.getByRole('heading', { name: 'Журнал решений', exact: true })).toBeVisible();
-  await page.screenshot({path:'../work/learning-progress.png',fullPage:true});
-  await page.locator('.learning-stats').screenshot({path:'../work/learning-metrics.png'});
-  await page.locator('.learning-timeline li').first().screenshot({path:'../work/learning-decision.png'});
+  await page.screenshot({path:'output/playwright/learning-progress.png',fullPage:true});
+  await page.locator('.learning-stats').screenshot({path:'output/playwright/learning-metrics.png'});
+  await page.locator('.learning-timeline li').first().screenshot({path:'output/playwright/learning-decision.png'});
   await page.setViewportSize({ width: 390, height: 844 });
   await expect(page.getByTestId('learning-accuracy')).toBeVisible();
-  await page.screenshot({path:'../work/learning-mobile.png',fullPage:true});
+  await page.screenshot({path:'output/playwright/learning-mobile.png',fullPage:true});
   await expect.poll(()=>page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   expect(errors).toEqual([]);
 });
@@ -63,7 +63,7 @@ test('учитель проверяет библиотеку черновико�
   await page.goto('/learning/library');
   await page.getByRole('button', { name: 'Создать AI-черновик', exact: true }).click();
   await expect(page.getByTestId('learning-task-editor')).toBeVisible();
-  await expect(page.getByText('Демо-образец', { exact: true }).first()).toBeVisible();
+  await expect(page.locator('.learning-task-list')).toContainText('AI-черновик');
   const editor = page.getByTestId('learning-task-editor');
   await editor.getByRole('button', { name: 'На проверку', exact: true }).click();
   await expect(editor.getByTestId('learning-task-status')).toHaveText('На проверке');
@@ -75,12 +75,12 @@ test('учитель проверяет библиотеку черновико�
   await editor.getByRole('textbox', { name: 'JSON задания', exact: true }).fill(JSON.stringify(question, null, 2));
   await editor.getByRole('button', { name: 'Сохранить правки в черновик', exact: true }).click();
   await expect(editor.getByTestId('learning-task-status')).toHaveText('Черновик');
-  await page.screenshot({path:'../work/learning-library.png',fullPage:true});
+  await page.screenshot({path:'output/playwright/learning-library.png',fullPage:true});
 });
 
 test('тренировка доступна с reduced motion и выключенными частицами',async({page})=>{
   await register(page,'student');await page.emulateMedia({reducedMotion:'reduce'});
-  expect((await page.request.patch('/api/settings',{headers:{Origin:'http://127.0.0.1:3000'},data:{preferences:{background:{density:0,distance:140,speed:0,color:'#64f5da',animated:false}}}})).status()).toBe(200);
+  expect((await page.request.patch('/api/settings',{headers:{Origin:process.env.EDUPILOT_TEST_URL!},data:{preferences:{background:{density:0,distance:140,speed:0,color:'#64f5da',animated:false}}}})).status()).toBe(200);
   await page.goto('/learning');await page.getByRole('button',{name:'Начать тренировку',exact:true}).click();
   await expect(page.getByTestId('learning-question')).toBeVisible();await page.getByLabel('Ваш ответ',{exact:true}).fill('0');await page.getByRole('button',{name:'Проверить ответ',exact:true}).click();await expect(page.getByTestId('learning-feedback')).toBeVisible();
   expect(await page.evaluate(()=>matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);

@@ -6,15 +6,16 @@ import {GlassCard,AnimatedPage} from '../ui/edupilot';import {statusLabel,dateLa
 const localInput=(value:string|null)=>{if(!value)return '';const date=new Date(value);return new Date(date.getTime()-date.getTimezoneOffset()*60000).toISOString().slice(0,16);};
 const dateValue=(value:FormDataEntryValue|null)=>value?new Date(String(value)).toISOString():null;
 export function AssignmentCreateForm({classId,materials,onCreated,initialKind='homework',initialMaterialId=''}:{classId:string,materials:MaterialRecord[],onCreated:()=>void,initialKind?:'homework'|'test',initialMaterialId?:string}){
- const [kind,setKind]=useState<'homework'|'test'>(initialKind),[materialId,setMaterialId]=useState(initialMaterialId),[confirmed,setConfirmed]=useState(false),[policy,setPolicy]=useState('manual'),[error,setError]=useState(''),[busy,setBusy]=useState(false);
+ const [kind,setKind]=useState<'homework'|'test'>(initialKind),[materialId,setMaterialId]=useState(initialMaterialId),[confirmedFor,setConfirmedFor]=useState<string|null>(null),[policy,setPolicy]=useState('manual'),[error,setError]=useState(''),[busy,setBusy]=useState(false);
  const available=materials.filter(m=>kind==='test'?['test','worksheet'].includes(m.type):m.type!=='test'),selected=available.find(m=>m.id===materialId)??available[0];
- useEffect(()=>{setConfirmed(false);},[selected?.id,selected?.version]);
+ const revisionKey=selected?`${selected.id}:${selected.version}`:null,confirmed=revisionKey!==null&&confirmedFor===revisionKey;
+ const setConfirmed=(value:boolean)=>setConfirmedFor(value?revisionKey:null);
  return <form onSubmit={async e=>{e.preventDefault();if(!selected)return;const form=e.currentTarget,data=new FormData(form);setBusy(true);setError('');try{
   await api(`classes/${classId}/assignment`,'POST',{kind,materialId:selected.id,materialVersion:selected.version,keysConfirmed:confirmed,title:data.get('title'),dueDate:dateValue(data.get('dueDate')),
    ...(kind==='test'?{maxAttempts:Number(data.get('maxAttempts')),durationMinutes:Number(data.get('durationMinutes')),answerPolicy:policy}:{})});
   form.reset();setConfirmed(false);toast.success('Задание выдано');onCreated();
  }catch(e){setError((e as Error).message);}finally{setBusy(false);}}}>
-  <label className="field">Название задания<input key={selected?.id} name="title" defaultValue={initialMaterialId?selected?.title:''} required maxLength={200}/></label>
+  <label className="field">Название задания<input name="title" defaultValue={initialMaterialId?selected?.title:''} required maxLength={200}/></label>
   <label className="field">Вид задания<select value={kind} onChange={e=>{setKind(e.target.value as 'homework'|'test');setConfirmed(false);setMaterialId('');}}><option value="homework">Домашнее задание</option><option value="test">Контрольная</option></select></label>
   <label className="field">Материал<select value={selected?.id??''} onChange={e=>{setMaterialId(e.target.value);setConfirmed(false);}} required>{!available.length&&<option value="">Нет подходящих материалов</option>}{available.map(m=><option key={m.id} value={m.id}>{m.title}</option>)}</select></label>
   <label className="field">Срок сдачи<input name="dueDate" type="datetime-local" required={kind==='test'&&policy==='after_due'}/><small>Местное время вашего устройства</small></label>

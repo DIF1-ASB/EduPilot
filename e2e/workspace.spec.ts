@@ -9,7 +9,7 @@ test("регистрация, материал, автосохранение, э
     page.getByRole("heading", { name: /У каждой идеи/ }),
   ).toBeVisible();
   await page.screenshot({
-    path: "../work/edupilot-landing.png",
+    path: "output/playwright/edupilot-landing.png",
     fullPage: true,
   });
   await page.getByRole("button", { name: "Регистрация", exact: true }).click();
@@ -17,7 +17,7 @@ test("регистрация, материал, автосохранение, э
   await page.getByLabel("Фамилия", { exact: true }).fill("Тестовая");
   await page
     .getByLabel("Электронная почта")
-    .fill(`e2e-${Date.now()}@test.example`);
+    .fill(`e2e-${Date.now()}@example.invalid`);
   await page.getByLabel("Пароль", { exact: true }).fill("ExamplePass789!");
   await page.getByLabel("Повторите пароль").fill("ExamplePass789!");
   await page
@@ -27,7 +27,7 @@ test("регистрация, материал, автосохранение, э
     page.getByRole("heading", { name: /Открывайте новые/ }),
   ).toBeVisible();
   await page.screenshot({
-    path: "../work/edupilot-dashboard.png",
+    path: "output/playwright/edupilot-dashboard.png",
     fullPage: true,
   });
   await page.getByRole("button", { name: /План урока От идеи/ }).click();
@@ -73,7 +73,7 @@ test("регистрация, материал, автосохранение, э
     page.getByRole("button", { name: "Мои материалы", exact: true }),
   ).toBeInViewport();
   await page.screenshot({
-    path: "../work/edupilot-mobile.png",
+    path: "output/playwright/edupilot-mobile.png",
     fullPage: true,
     animations: 'disabled',
   });

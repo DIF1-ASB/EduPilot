@@ -1,3 +1,4 @@
+import type {MaterialRecord} from '../lib/domain';
 import {describe,it,expect} from 'vitest';
 import {createElement} from 'react';import {renderToStaticMarkup} from 'react-dom/server';
 import {AppContext} from '../components/app-context';
@@ -6,7 +7,7 @@ import {OnlineTestEditor,editOnlineQuestion} from '../components/assessment/onli
 import {GenerationStatus} from '../components/generation/status';
 import {quizFixture} from './helpers/online-content';
 const render=(child:ReturnType<typeof createElement>)=>renderToStaticMarkup(createElement(AppContext.Provider,{value:{user:{id:'teacher',role:'teacher',settings:{}},ai:{jobsAvailable:true,mode:'mock'},navigate:()=>{},refresh:async()=>{}}},child));
-const material=()=>({id:'quiz',title:'Уравнения',type:'test',subject:'Математика',grade:7,status:'ready',version:1,contentJson:quizFixture(),metadataJson:{onlineTestVersion:1,keysConfirmed:true},createdAt:'',updatedAt:''} as any);
+const material=():MaterialRecord=>({id:'quiz',title:'Уравнения',type:'test',subject:'Математика',grade:7,status:'ready',version:1,contentJson:quizFixture(),metadataJson:{onlineTestVersion:1,keysConfirmed:true},createdAt:'',updatedAt:''});
 describe('short online test creation and teacher confirmation',()=>{
  it('asks for topic, subject, school grade and optional details rather than grading criteria or printed sheets',()=>{
   const html=render(createElement(CreateOnlineTest,{onCreated:()=>{}}));for(const name of ['title','subject','grade','clarifications','count','difficulty'])expect(html).toContain('name="'+name+'"');

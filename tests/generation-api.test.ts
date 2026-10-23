@@ -1,3 +1,4 @@
+import type {GenerationJobDTO} from '../lib/generation/contracts';
 import {describe,it,expect} from 'vitest';
 import {openPlatformFixture} from './helpers/platform';
 const enabled=async<T>(fn:()=>T)=>(await import('../lib/runtime')).withRuntime({GENERATION_JOBS_ENABLED:'true'},fn);
@@ -7,13 +8,13 @@ describe('private durable generation API',()=>{
   const f=await openPlatformFixture('generation-api');
   try{await enabled(async()=>{
    const input=payload();expect((await f.call('generation-jobs','POST',input,f.student.cookie)).status).toBe(403);
-   const first=await f.call('generation-jobs','POST',input,f.teacher.cookie);expect(first.status).toBe(201);const job:any=await first.json();expect(job.state).toBe('queued');
-   const repeated=await f.call('generation-jobs','POST',input,f.teacher.cookie);expect((await repeated.json() as any).id).toBe(job.id);
+   const first=await f.call('generation-jobs','POST',input,f.teacher.cookie);expect(first.status).toBe(201);const job=await first.json() as GenerationJobDTO;expect(job.state).toBe('queued');
+   const repeated=await f.call('generation-jobs','POST',input,f.teacher.cookie);expect((await repeated.json() as GenerationJobDTO).id).toBe(job.id);
    expect((await f.call('generation-jobs','POST',{...input,input:{...input.input,title:'Другой запрос'}},f.teacher.cookie)).status).toBe(409);
    expect((await f.call('generation-jobs','POST',payload(),f.teacher.cookie)).status).toBe(409);
    expect((await f.call('generation-jobs/'+job.id,'GET',undefined,f.outsider.cookie)).status).toBe(403);
-   const list:any=await(await f.call('generation-jobs','GET',undefined,f.teacher.cookie)).json();expect(list).toHaveLength(1);expect(JSON.stringify(list)).not.toMatch(/inputJson|rawReply|correctOptionIds|API_KEY/);
-   const cancel:any=await(await f.call('generation-jobs/'+job.id+'/cancel','POST',{},f.teacher.cookie)).json();expect(cancel.state).toBe('cancelled');
+   const list=await(await f.call('generation-jobs','GET',undefined,f.teacher.cookie)).json();expect(list).toHaveLength(1);expect(JSON.stringify(list)).not.toMatch(/inputJson|rawReply|correctOptionIds|API_KEY/);
+   const cancel=await(await f.call('generation-jobs/'+job.id+'/cancel','POST',{},f.teacher.cookie)).json() as GenerationJobDTO;expect(cancel.state).toBe('cancelled');
    expect((await f.call('generation-jobs','POST',payload(),f.teacher.cookie)).status).toBe(201);
    const notes=await f.call('generation-jobs','POST',{requestId:crypto.randomUUID(),kind:'notes',input:{title:'Клетка',subject:'Биология',grade:6}},f.student.cookie);expect(notes.status).toBe(201);
   });}finally{await f.close();}

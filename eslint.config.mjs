@@ -12,6 +12,16 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Generated test runtimes, private fixtures and downloaded QA tools are not source.
+    ".superpowers/**",
+    "work/**",
+    "outputs/**",
+    "output/**",
+    "test-results/**",
+    "playwright-report/**",
+    ".vinext/**",
+    ".wrangler/**",
+    ".sites-runtime/**",
   ]),
   {
     files: ["components/ui/**/*.{ts,tsx}", "hooks/use-mobile.ts"],

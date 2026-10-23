@@ -3,7 +3,7 @@ import {QuestionInput} from '../components/assessment/question-input';
 import {AssignmentDownloads} from '../components/assignments/downloads';
 describe('accessible student question inputs',()=>{
  it('keeps homework download actions while control tests remain online-only',()=>{
-  const homework=renderToStaticMarkup(createElement(AssignmentDownloads,{assignmentId:'homework',kind:'homework'} as any));expect(homework).toContain('DOCX');expect(homework).toContain('PDF');
+  const homework=renderToStaticMarkup(createElement(AssignmentDownloads,{assignmentId:'homework',kind:'homework'}));expect(homework).toContain('DOCX');expect(homework).toContain('PDF');
   const control=renderToStaticMarkup(createElement(AssignmentDownloads,{assignmentId:'test'}));expect(control).not.toContain('Скачать');
  });
  it.each(['single','multiple','short','numeric','open'] as const)('renders the specialized %s input with a question label and no private fields',kind=>{
