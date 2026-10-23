@@ -157,6 +157,7 @@ model Enrollment {
   @@index([studentId])
 }
 model Assignment {
+  contextJson Json @default("{}")
   id String @id @default(cuid())
   classId String
   materialId String

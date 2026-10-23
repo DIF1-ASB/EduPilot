@@ -67,8 +67,8 @@ export async function createAssignment(actor:Actor,classId:string,raw:unknown){
  }
  const id=crypto.randomUUID();
  // Conditional INSERT closes the material edit/class ownership race without rewriting the source.
- const inserted=await client.$executeRawUnsafe(`INSERT INTO Assignment(id,classId,materialId,title,dueDate,kind,maxAttempts,durationMinutes,answerPolicy,snapshotJson,materialVersion)
- SELECT ?,?,?,?,?,?,?,?,?,?,? FROM Material m JOIN SchoolClass c ON c.id=?
+ const inserted=await client.$executeRawUnsafe(`INSERT INTO Assignment(id,classId,materialId,title,dueDate,kind,maxAttempts,durationMinutes,answerPolicy,snapshotJson,materialVersion,contextJson)
+ SELECT ?,?,?,?,?,?,?,?,?,?,?,json_object('title',m.title,'subject',m.subject,'grade',m.grade) FROM Material m JOIN SchoolClass c ON c.id=?
  WHERE m.id=? AND m.userId=? AND m.version=? AND c.teacherId=?`,id,classId,material.id,input.title,input.dueDate?new Date(input.dueDate).toISOString().replace('Z','+00:00'):null,
  input.kind,input.maxAttempts,input.durationMinutes,input.answerPolicy,JSON.stringify(snapshot),material.version,classId,material.id,actor.id,material.version,actor.id);
  if(!inserted)fail(409,'Материал или класс изменён. Обновите страницу.');

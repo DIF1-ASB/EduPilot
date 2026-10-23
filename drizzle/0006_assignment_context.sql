@@ -1,0 +1,1 @@
+ALTER TABLE "Assignment" ADD COLUMN "contextJson" JSONB NOT NULL DEFAULT '{}';
