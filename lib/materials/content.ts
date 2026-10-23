@@ -3,10 +3,12 @@ import { documentSchema, type DocumentContent } from '../domain';
 import { validateAssessment, type AssessmentDocument } from '../assessment/schema';
 import {validateNotes,type NotesDocument} from '../notes/schema';
 import {notesToSections} from '../notes/generation';
+import {validateNotesArticle,type NotesArticleDocument} from '../notes/article';
 
-export type MaterialContent=DocumentContent|AssessmentDocument|NotesDocument;
+export type MaterialContent=DocumentContent|AssessmentDocument|NotesDocument|NotesArticleDocument;
 export function parseMaterialContent(raw:unknown):MaterialContent {
   if(raw && typeof raw==='object' && 'schemaVersion' in raw){
+    if('kind' in raw&&raw.kind==='notes-article')return validateNotesArticle(raw,{ready:false});
     if('kind' in raw&&raw.kind==='notes')return validateNotes(raw,{ready:false});
     return validateAssessment(raw,{publishable:false});
   }
@@ -23,6 +25,7 @@ export const materialContentSchema=z.unknown().transform((raw,ctx)=>{
 });
 export function materialSections(content:MaterialContent,teacher=false):DocumentContent {
   if(!('schemaVersion' in content))return content;
+  if(content.kind==='notes-article')return {demo:content.demo,sections:[{id:'article',title:'Конспект',body:content.bodyMarkdown}]};
   if(content.kind==='notes')return {demo:content.demo,sections:notesToSections(content)};
   return {demo:content.demo,sections:content.variants.flatMap(v=>v.questions.map((q,index)=>({
     id:q.id,title:`${v.label} · Задание ${index+1}`,body:q.prompt,points:q.points,

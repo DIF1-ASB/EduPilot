@@ -1,4 +1,6 @@
-import {requestCompletion} from './ai/client';
+import {requestCompletion,type CompletionOptions} from './ai/client';
+import {buildOnlineTestMessages,parseOnlineTestReply,onlineTestDraft,type OnlineTestInput} from './assessment/online';
+import {buildArticleMessages,parseArticleReply,type NotesArticleInput,type NotesArticleDocument} from './notes/article';
 import { config } from "./runtime";
 import {
   DocumentContent,
@@ -14,12 +16,18 @@ import {assessmentTemplate,buildAssessmentMessages,parseAssessmentReply} from '.
 import {createNotesDraft,type NotesInput,type NotesDocument} from './notes/schema';
 import {buildNotesMessages,parseNotesReply} from './notes/generation';
 export type ConversationMessage = { role: string; content: string };
+/** Internal worker error: never serialize rawReply into a user response or log. */
+export class InvalidGeneratedContent extends Error {
+  constructor(public rawReply:string,public problem:string){super('ИИ вернул материал, не прошедший проверку.');}
+}
 export interface AIProvider {
   demo: boolean;
   generateText(messages: ConversationMessage[]): Promise<string>;
   generateStructuredContent(p: GeneratorInput): Promise<MaterialContent>;
   generateAssessment(p:GeneratorInput):Promise<AssessmentDocument>;
   generateNotes(p:NotesInput):Promise<NotesDocument>;
+  generateOnlineTest(p:OnlineTestInput,options?:CompletionOptions,invalidReply?:string):Promise<AssessmentDocument>;
+  generateArticle(p:NotesArticleInput,options?:CompletionOptions,invalidReply?:string):Promise<NotesArticleDocument>;
   analyzeImage(dataUrl: string, prompt: string): Promise<string>;
   analyzeDocument(text: string, prompt: string): Promise<string>;
   generateLessonPlan(p: GeneratorInput): Promise<DocumentContent>;
@@ -55,6 +63,8 @@ export class MockAIProvider implements AIProvider {
   }
   async generateAssessment(p:GeneratorInput):Promise<AssessmentDocument>{return assessmentTemplate(p);}
   async generateNotes(_p:NotesInput):Promise<NotesDocument>{return {...createNotesDraft(),demo:true};}
+  async generateOnlineTest(p:OnlineTestInput,_options?:CompletionOptions,_invalidReply?:string):Promise<AssessmentDocument>{return onlineTestDraft(p);}
+  async generateArticle(_p:NotesArticleInput,_options?:CompletionOptions,_invalidReply?:string):Promise<NotesArticleDocument>{return {schemaVersion:3,kind:'notes-article',demo:true,bodyMarkdown:''};}
   async analyzeImage(_dataUrl: string, _prompt: string): Promise<string> {
     throw new HttpError(
       422,
@@ -80,6 +90,16 @@ export class MockAIProvider implements AIProvider {
 }
 export class LiveAIProvider extends MockAIProvider {
   demo = false;
+  private async generateValidated<T>(messages:ConversationMessage[],parse:(raw:string)=>T,options?:CompletionOptions):Promise<T>{
+    const raw=await requestCompletion(messages,{...options,structured:true});
+    try{return parse(raw);}catch(error){throw new InvalidGeneratedContent(raw.slice(0,65000),error instanceof Error?error.message.slice(0,1000):'Некорректный формат');}
+  }
+  async generateOnlineTest(p:OnlineTestInput,options?:CompletionOptions,invalidReply?:string):Promise<AssessmentDocument>{
+    return this.generateValidated(buildOnlineTestMessages(p,invalidReply),raw=>parseOnlineTestReply(raw,p),options);
+  }
+  async generateArticle(p:NotesArticleInput,options?:CompletionOptions,invalidReply?:string):Promise<NotesArticleDocument>{
+    return this.generateValidated(buildArticleMessages(p,invalidReply),raw=>parseArticleReply(raw,{subject:p.subject}),options);
+  }
   async generateNotes(p:NotesInput):Promise<NotesDocument>{
     let invalid:string|undefined;
     for(let i=0;i<2;i++){const raw=await this.request(buildNotesMessages(p,invalid),true);try{return parseNotesReply(raw);}catch{invalid=raw;}}
