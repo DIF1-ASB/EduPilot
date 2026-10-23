@@ -1,4 +1,4 @@
-import { z } from "zod";
+import {requestCompletion} from './ai/client';
 import { config } from "./runtime";
 import {
   DocumentContent,
@@ -89,49 +89,7 @@ export class LiveAIProvider extends MockAIProvider {
     messages: unknown[],
     structured = false,
   ): Promise<string> {
-    const base = config("AI_BASE_URL", "https://api.openai.com/v1").replace(
-      /\/$/,
-      "",
-    );
-    const url = new URL(base);
-    if (
-      url.protocol !== "https:" &&
-      !["localhost", "127.0.0.1"].includes(url.hostname)
-    )
-      throw new HttpError(503, "Провайдер должен использовать HTTPS.");
-    let response: Response;
-    try {
-      response = await fetch(`${base}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${config("AI_API_KEY")}`,
-        },
-        body: JSON.stringify({
-          model: config("AI_MODEL", "gpt-4.1-mini"),
-          messages,
-          max_tokens: 6000,
-          ...(structured ? { response_format: { type: "json_object" } } : {}),
-        }),
-        signal: AbortSignal.timeout(45000),
-      });
-    } catch {
-      throw new HttpError(
-        503,
-        "ИИ-провайдер не ответил вовремя. Повторите запрос.",
-      );
-    }
-    if (!response.ok)
-      throw new HttpError(
-        502,
-        `Ошибка ИИ-провайдера (${response.status}). Проверьте серверную конфигурацию.`,
-      );
-    try {
-      const data: any = await response.json();
-      return z.string().min(1).parse(data.choices?.[0]?.message?.content);
-    } catch {
-      throw new HttpError(502, "Провайдер вернул некорректный ответ. Повторите запрос.");
-    }
+    return requestCompletion(messages,{structured});
   }
   async generateText(messages: ConversationMessage[]) {
     return this.request([

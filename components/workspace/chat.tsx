@@ -15,11 +15,7 @@ import {
   Pencil,
   FileText,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import rehypeHighlight from "rehype-highlight";
+import {MarkdownContent} from '../content/markdown';
 import { toast } from "sonner";
 import { api } from "@/lib/client";
 import { useApp } from "../app-context";
@@ -39,12 +35,7 @@ export function ChatMessage({ message }: { message: any }) {
           {message.demo && <span>Демонстрационный ответ</span>}
         </div>
         <div className="markdown">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkMath]}
-            rehypePlugins={[rehypeKatex, rehypeHighlight]}
-          >
-            {message.content}
-          </ReactMarkdown>
+          <MarkdownContent source={message.content}/>
         </div>
         {message.role === "assistant" && (
           <button
