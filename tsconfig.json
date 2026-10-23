@@ -23,6 +23,7 @@
       }
     ],
     "paths": {
+      "@notes-export-math": ["./lib/notes/export-math.ts"],
       "@assessment-local-store": ["./lib/assessment/local-store.ts"],
       "@local-db": ["./lib/local-database.ts"],
       "@/*": [

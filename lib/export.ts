@@ -22,6 +22,8 @@ import {buildAllAnswerSheets} from './assessment/sheet';
 import {exportAnswerSheetsDocx} from './assessment/export-docx';
 import {exportAnswerSheetsPdf} from './assessment/export-pdf';
 import {fail} from './security';
+import {exportNotesArticleDocx} from './notes/export-docx';
+import {exportNotesArticlePdf} from './notes/export-pdf';
 
 async function getImage(section: Section, ownerId: string) {
   if (!section.imageId) return null;
@@ -46,6 +48,10 @@ export async function exportMaterial(
   teacher: boolean,
 ) {
   if(material.type==='test'&&['docx','pdf'].includes(format))fail(410,'Контрольные выполняются только на сайте. Word/PDF для них отключены.');
+  if(material.type==='notes'&&['docx','pdf'].includes(format)&&material.contentJson?.kind==='notes-article'){
+    try{return {bytes:format==='docx'?await exportNotesArticleDocx(material):await exportNotesArticlePdf(material),mime:format==='docx'?'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'application/pdf'};}
+    catch(error){if(error&&typeof error==='object'&&'status' in error&&error.status===503)fail(503,'Экспорт формул доступен на Node-сервере, но не в облачной среде.');fail(422,'Не удалось оформить конспект. Проверьте формулы и поддерживаемые символы: максимум 128 формул, до 2000 символов в каждой.');}
+  }
   if(['test','worksheet'].includes(material.type)&&['docx','pdf'].includes(format)){
     const sheets=buildAllAnswerSheets(material,teacher);
     return {bytes:format==='docx'?await exportAnswerSheetsDocx(sheets):await exportAnswerSheetsPdf(sheets),mime:format==='docx'?'application/vnd.openxmlformats-officedocument.wordprocessingml.document':'application/pdf'};

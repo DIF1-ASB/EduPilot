@@ -1,3 +1,3 @@
 import { defineConfig } from 'vitest/config';
 import { fileURLToPath } from 'node:url';
-export default defineConfig({esbuild:{jsx:'automatic'},test:{include:['tests/**/*.test.ts'],environment:'node',maxWorkers:4},resolve:{alias:{'@':fileURLToPath(new URL('.',import.meta.url)),'@local-db':fileURLToPath(new URL('./lib/local-database.ts',import.meta.url)),'@assessment-local-store':fileURLToPath(new URL('./lib/assessment/local-store.ts',import.meta.url))}}});
+export default defineConfig({esbuild:{jsx:'automatic'},test:{include:['tests/**/*.test.ts'],environment:'node',maxWorkers:4},resolve:{alias:{'@':fileURLToPath(new URL('.',import.meta.url)),'@notes-export-math':fileURLToPath(new URL('./lib/notes/export-math.ts',import.meta.url)),'@local-db':fileURLToPath(new URL('./lib/local-database.ts',import.meta.url)),'@assessment-local-store':fileURLToPath(new URL('./lib/assessment/local-store.ts',import.meta.url))}}});
