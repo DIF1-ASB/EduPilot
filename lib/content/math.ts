@@ -1,3 +1,7 @@
+import {unified} from 'unified';
+import remarkParse from 'remark-parse';
+import type {Nodes} from 'mdast';
+
 /** Normalize presentation only: never rewrite mathematical meaning or code. */
 export const mathPrompt='Формулы: $...$ внутри строки, $$ на отдельных строках для блочных. Русский текст внутри формул оборачивай в \\text{...}. В JSON экранируй каждый обратный слеш вторым слешем. Не включай скрытые рассуждения.';
 function normalizeProse(source: string): string {
@@ -9,31 +13,22 @@ function normalizeProse(source: string): string {
 }
 
 export function normalizeMathMarkdown(source: string): string {
-  const blocks: string[] = [];
-  let prose = '', fence: {char: string; length: number} | undefined;
-  const flush = () => {
-    blocks.push(prose.replace(/(`+)([\s\S]*?)\1(?!`)/g, match => {
-      const index = protectedCode.push(match) - 1;
-      return `\u0000${index}\u0000`;
-    }));
-    prose = '';
+  // CommonMark context distinguishes indented code from paragraph/list indentation.
+  // Slice original ranges rather than serialize the AST: literal code stays byte-for-byte.
+  const ranges: {start:number;end:number}[] = [];
+  const visit = (node:Nodes) => {
+    if (node.type === 'code' || node.type === 'inlineCode') {
+      const start=node.position?.start.offset,end=node.position?.end.offset;
+      if(start!==undefined&&end!==undefined)ranges.push({start,end});
+    } else if ('children' in node) node.children.forEach(visit);
   };
-  const protectedCode: string[] = [];
-  for (const line of source.match(/[^\n]*\n|[^\n]+$/g) ?? []) {
-    const marker = /^ {0,3}(`{3,}|~{3,})/.exec(line);
-    if (fence) {
-      const index = protectedCode.push(line) - 1;
-      blocks.push(`\u0000${index}\u0000`);
-      if (marker && marker[1][0] === fence.char && marker[1].length >= fence.length && /^\s*$/.test(line.slice(marker[0].length))) fence = undefined;
-    } else if (marker) {
-      flush();
-      fence = {char: marker[1][0], length: marker[1].length};
-      const index = protectedCode.push(line) - 1;
-      blocks.push(`\u0000${index}\u0000`);
-    } else prose += line;
+  visit(unified().use(remarkParse).parse(source));
+  let result='',cursor=0;
+  for(const {start,end} of ranges){
+    result+=normalizeProse(source.slice(cursor,start))+source.slice(start,end);
+    cursor=end;
   }
-  flush();
-  return normalizeProse(blocks.join('')).replace(/\u0000(\d+)\u0000/g, (_, index: string) => protectedCode[Number(index)]);
+  return result+normalizeProse(source.slice(cursor));
 }
 
 /** Detect single-escaped JSON LaTeX after parsing. CRLF in ordinary text is valid. */

@@ -808,6 +808,11 @@ export function MaterialEditor({ id }: { id: string }) {
       setSaving(false);
     }
   };
+  const saveOnline = async (): Promise<MaterialRecord | null> => {
+    await save();
+    if (inFlight.current || savedRevision.current !== revision.current) return null;
+    return current.current;
+  };
   useEffect(() => {
     if (!dirty || saveError) return;
     const timer = setTimeout(save, 1100);
@@ -858,7 +863,7 @@ export function MaterialEditor({ id }: { id: string }) {
       const url=URL.createObjectURL(await response.blob()),link=document.createElement('a');link.href=url;link.download=m.title+'.'+format;link.click();setTimeout(()=>URL.revokeObjectURL(url),3000);toast.success('Файл подготовлен');
     }catch(e){toast.error((e as Error).message);}
   };
-  if('schemaVersion' in m.contentJson&&m.contentJson.kind==='assessment'&&m.canEdit!==false)return <><p className={saveError?'form-error':'save-status'} role="status">{saveError||(saving?'Сохранение…':dirty?'Есть несохранённые изменения':'Все изменения сохранены')}</p>{m.metadataJson.onlineTestVersion===1?<OnlineTestEditor material={m} onChange={change} onSave={save}/>:<AssessmentEditor material={m} onChange={change} onSave={save} onPreview={()=>{}} onDownload={m.type==='test'?undefined:download}/>}</>;
+  if('schemaVersion' in m.contentJson&&m.contentJson.kind==='assessment'&&m.canEdit!==false)return <><p className={saveError?'form-error':'save-status'} role="status">{saveError||(saving?'Сохранение…':dirty?'Есть несохранённые изменения':'Все изменения сохранены')}</p>{m.metadataJson.onlineTestVersion===1?<OnlineTestEditor material={m} onChange={change} onSave={saveOnline}/>:<AssessmentEditor material={m} onChange={change} onSave={save} onPreview={()=>{}} onDownload={m.type==='test'?undefined:download}/>}</>;
   if ('schemaVersion' in m.contentJson) return (
     <AnimatedPage><header className="page-heading"><h1>{m.title}</h1></header>
       <GlassCard>{materialSections(m.contentJson, m.canEdit !== false).sections.map(s=>(

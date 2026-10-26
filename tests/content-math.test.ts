@@ -16,6 +16,19 @@ describe('safe shared mathematics',()=>{
  it('preserves variable-length and tilde code fences',()=>{
   for(const source of ['``x ` \\(code\\)``','~~~latex\n\\[code\\]\n~~~','````md\n```\n\\(code\\)\n````'])expect(normalizeMathMarkdown(source)).toBe(source);
  });
+ it('preserves indented code and code nested in lists or quotes literally',()=>{
+  for(const source of [
+   '    \\(x+1\\)\n    \\[x=1\\]',
+   '\t\\(x+1\\)\n\t\\[x=1\\]',
+   '- Пример\n\n      \\(x+1\\)\n      \\[x=1\\]',
+   '>     \\(x+1\\)\n>     \\[x=1\\]',
+  ]){
+   expect(normalizeMathMarkdown(source)).toBe(source);
+   const html=renderToStaticMarkup(createElement(MarkdownContent,{source}));
+   expect(html).toContain('<pre>');expect(html).not.toContain('katex');
+  }
+  expect(normalizeMathMarkdown('Абзац\n    \\(x+1\\)')).toBe('Абзац\n    $x+1$');
+ });
  it('renders a Cyrillic arrow label as text without altering existing text wrappers',()=>{
   const source='$a \\xrightarrow{свет} b$';
   expect(normalizeMathMarkdown(source)).toBe('$a \\xrightarrow{\\text{свет}} b$');

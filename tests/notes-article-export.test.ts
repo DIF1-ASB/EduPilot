@@ -30,6 +30,9 @@ describe('prose notes exports',()=>{
   expect(JSON.stringify(blocks)).toContain('важный');expect(JSON.stringify(blocks)).toContain('"bold":true');
   expect(blocks.at(-1)).toMatchObject({kind:'code',text:'$literal$ **not emphasis**'});
  });
+ it('exports indented TeX teaching examples as literal code, not equations',()=>{
+  expect(articleToExportBlocks({...doc,bodyMarkdown:'    \\(x+1\\)\n    \\[x=1\\]'})).toEqual([{kind:'code',text:'\\(x+1\\)\n\\[x=1\\]'}]);
+ });
  it('embeds formula media in DOCX with A4 page style and no literal Markdown outside code',async()=>{
   const zip=await JSZip.loadAsync(await exportNotesArticleDocx(material)),xml=await zip.file('word/document.xml')!.async('string');
   expect(Object.keys(zip.files).filter(x=>x.startsWith('word/media/')&&!zip.files[x].dir).length).toBeGreaterThanOrEqual(2);

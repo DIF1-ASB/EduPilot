@@ -27,7 +27,10 @@ export function renderFormulaAsset(latex:string,{display}:{display:boolean}):Pro
   let svg=outer.slice(start,end+6);const box=svg.match(/viewBox="([^"]+)"/);if(!box)throw Error('Отсутствуют размеры формулы.');
   const [, ,w,h]=box[1].trim().split(/\s+/).map(Number);
   if(!Number.isFinite(w)||!Number.isFinite(h)||w<=0||h<=0)throw Error('Недопустимые размеры формулы.');
-  const scale=16/1000,width=Math.min(657,w*scale),height=h*scale*(width/(w*scale));
+  const scale=16/1000,naturalWidth=w*scale,width=Math.min(657,naturalWidth),fit=width/naturalWidth;
+  // The normal 12pt equation may shrink only to 10.2pt, never into a hairline.
+  if(fit<0.85)throw Error('Формула слишком широкая для читаемого экспорта. Разбейте выражение на несколько отдельных формул.');
+  const height=h*scale*fit;
   if(height>900)throw Error('Формула слишком высокая для страницы.');
   svg=svg.replace(/width="[^"]*"/,`width="${Math.ceil(width*3)}"`).replace(/height="[^"]*"/,`height="${Math.ceil(height*3)}"`).replace(/currentColor/g,'#000000');
   if(/<(?:image|foreignObject)\b|(?:href|xlink:href)="(?!#)/i.test(svg))throw Error('Внешние ресурсы формулы запрещены.');

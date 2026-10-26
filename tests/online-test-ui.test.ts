@@ -14,7 +14,7 @@ describe('short online test creation and teacher confirmation',()=>{
   for(const name of ['criteria','questionTypes','answerLines','variants','maxScore'])expect(html).not.toContain('name="'+name+'"');expect(html).toContain('value="10"');expect(html).not.toMatch(/Скачать.*(?:DOCX|PDF)/);
  });
  it('shows a teacher-only draft preview and resets confirmation on every question edit',()=>{
-  const m=material(),html=render(createElement(OnlineTestEditor,{material:m,onChange:()=>{},onSave:async()=>{}}));expect(html).toContain('Перед выдачей');expect(html).toContain('Прибавляем единицу.');expect(html).not.toMatch(/Скачать.*(?:DOCX|PDF)|Строк для ответа/);
+  const m=material(),html=render(createElement(OnlineTestEditor,{material:m,onChange:()=>{},onSave:async()=>m}));expect(html).toContain('Перед выдачей');expect(html).toContain('Прибавляем единицу.');expect(html).not.toMatch(/Скачать.*(?:DOCX|PDF)|Строк для ответа/);
   const edited=editOnlineQuestion(m,'q0',{prompt:'Новое условие'});expect(edited.metadataJson.keysConfirmed).toBe(false);expect(edited.status).toBe('draft');expect(m.metadataJson.keysConfirmed).toBe(true);
  });
  it('offers completed background results explicitly instead of silently replacing the form',()=>{

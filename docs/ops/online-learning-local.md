@@ -14,6 +14,8 @@
 
 Нужен Node >=22.13 и совместимая с ним native-сборка better-sqlite3. Не переключайте Node, оставляя бинарный модуль от другой версии. Установите зависимости через штатный install workflow проекта. Не запускайте setup с адресом настоящей базы для приёмки.
 
+В этом Windows-checkout для приёмки сохранён проверенный Node 22.23.3 в игнорируемом `work/runtime/node-v22.23.3-win-x64`; better-sqlite3 собран под него. Системный Node не заменялся. Перед командами ниже в **каждом** терминале из корня проекта можно задать `$env:PATH="$PWD\work\runtime\node-v22.23.3-win-x64;$env:PATH"` и проверить `node --version`. Это меняет только текущий терминал. Этот локальный runtime не входит в Git: в другой копии проекта нужен обычный Node >=22.13 и установка совместимых зависимостей.
+
 1. Выполните `npm test`, `npm run typecheck`, `npm run build` и `npm run sites:build`.
 2. В отдельном терминале из корня репозитория запустите `node --import tsx e2e/local-server.ts`.
 3. В терминале проверки задайте `EDUPILOT_TEST_URL=http://127.0.0.1:3400`, затем `npm run test:e2e`. На Windows PowerShell переменная задаётся как `$env:EDUPILOT_TEST_URL='http://127.0.0.1:3400'`.
