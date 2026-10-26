@@ -21,6 +21,17 @@ describe('coherent prose notes contract',()=>{
   vi.stubGlobal('fetch',async()=>Response.json({choices:[{message:{content:JSON.stringify(articleFixture())}}]}));
   expect(await new LiveAIProvider().generateArticle(params)).toEqual(articleFixture());expect((await new MockAIProvider().generateArticle(params)).demo).toBe(true);
  });
+ it('sends the rejected article as assistant history and its validation problem as repair feedback',async()=>{
+  const previousReply=JSON.stringify({schemaVersion:3,kind:'notes-article',demo:false,bodyMarkdown:'## Уравнение\n\nСлишком короткое объяснение.'});
+  const validationError='Конспект должен содержать 700–1100 слов; сейчас 425.';
+  let sent:any;
+  vi.stubGlobal('fetch',async(_url:unknown,init:RequestInit)=>{sent=JSON.parse(String(init.body));return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(articleFixture())}}]});});
+  const result=await new LiveAIProvider().generateArticle({title:'Линейные уравнения',subject:'Математика',grade:7,clarifications:''},undefined,JSON.stringify({previousReply,validationError}));
+  expect(result).toEqual(articleFixture());
+  expect(sent.messages.at(-2)).toEqual({role:'assistant',content:previousReply});
+  expect(sent.messages.at(-1).role).toBe('user');expect(sent.messages.at(-1).content).toContain(validationError);
+  expect(sent.messages[0].content).not.toContain(validationError);
+ });
  it('accepts an article and preserves legacy formats without conversion',()=>{
   const article=articleFixture();expect(parseArticleReply(JSON.stringify(article))).toEqual(article);expect(parseMaterialContent(article)).toEqual(article);
   const legacy={sections:[{id:'x',title:'Старый конспект',body:'Текст'}]};expect(parseMaterialContent(legacy)).toEqual(legacy);expect(parseMaterialContent(createNotesDraft())).toEqual(createNotesDraft());
