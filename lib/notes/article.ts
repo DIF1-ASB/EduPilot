@@ -7,14 +7,16 @@ export type NotesArticleInput=z.infer<typeof notesArticleInputSchema>;
 const articleSchema=z.object({schemaVersion:z.literal(3),kind:z.literal('notes-article'),demo:z.boolean(),bodyMarkdown:z.string().max(30000)}).strict();
 export type NotesArticleDocument=z.infer<typeof articleSchema>;
 export function validateNotesArticle(raw:unknown,{ready,subject}:{ready:boolean;subject?:string}):NotesArticleDocument{
- const doc=articleSchema.parse(raw);assertSafeMathText(doc);
+ const doc=articleSchema.parse(raw),problems:string[]=[];
+ try{assertSafeMathText(doc);}catch(error){problems.push(error instanceof Error?error.message:'Некорректное экранирование формулы.');}
  if(ready){
   const text=doc.bodyMarkdown,words=(text.match(/[\p{L}]+(?:[-’'][\p{L}]+)*/gu)||[]).length;
-  if(words<700||words>1100)throw Error(`Конспект должен содержать 700–1100 слов; сейчас ${words}.`);
-  if((text.match(/^##\s+\S/gm)||[]).length<4)throw Error('Нужно не менее четырёх содержательных разделов.');
-  if(/^#{1,3}\s*(?:Самопроверка|Основные тезисы|Вопросы и ответы)/mi.test(text))throw Error('Нужен связный конспект, не анкета тезисов или вопросов.');
-  assertRussianSubjectLanguage(text,subject);
+  if(words<700||words>1100)problems.push(`Конспект должен содержать 700–1100 слов; сейчас ${words}.`);
+  if((text.match(/^##\s+\S/gm)||[]).length<4)problems.push('Нужно не менее четырёх содержательных разделов.');
+  if(/^#{1,3}\s*(?:Самопроверка|Основные тезисы|Вопросы и ответы)/mi.test(text))problems.push('Нужен связный конспект, не анкета тезисов или вопросов.');
+  try{assertRussianSubjectLanguage(text,subject);}catch(error){problems.push(error instanceof Error?error.message:'Нарушены языковые требования конспекта.');}
  }
+ if(problems.length)throw Error(problems.join('\n'));
  return doc;
 }
 export function parseArticleReply(raw:string,context?:{subject?:string}):NotesArticleDocument{

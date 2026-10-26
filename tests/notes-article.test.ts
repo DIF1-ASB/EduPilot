@@ -7,6 +7,11 @@ import {articleFixture} from './helpers/online-content';
 import {withoutAnswers} from '../lib/domain';
 afterEach(()=>vi.unstubAllGlobals());
 describe('coherent prose notes contract',()=>{
+ it('reports corrupted formulas and insufficient prose together so the only repair can address both',()=>{
+  const bodyMarkdown='## Уравнения\n\n'+Array.from({length:100},()=> 'Проверяем корень.').join(' ')+' $2 \times 3=6$';
+  try{validateNotesArticle({schemaVersion:3,kind:'notes-article',demo:false,bodyMarkdown},{ready:true,subject:'Математика'});expect.fail('Invalid article accepted');}
+  catch(error){expect(String(error)).toContain('экранирование');expect(String(error)).toContain('700–1100');expect(String(error)).toContain('четырёх');}
+ });
  it('rejects an English connector in Russian prose without rejecting equations, code or quotations',()=>{
   const good=articleFixture(),context={subject:'Математика'};
   expect(()=>parseArticleReply(JSON.stringify({...good,bodyMarkdown:good.bodyMarkdown+'\nВыполните проверку within исходного уравнения.'}),context)).toThrow(/языков/);
