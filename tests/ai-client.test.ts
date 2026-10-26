@@ -5,6 +5,14 @@ afterEach(()=>vi.unstubAllGlobals());
 const messages=[{role:'user',content:'Сколько будет 2+2?'}];
 const run=(base:string,fn:()=>Promise<unknown>)=>withRuntime({AI_BASE_URL:base,AI_API_KEY:'synthetic-secret',AI_MODEL:'test-model'},fn);
 describe('bounded completion client',()=>{
+ it('uses bounded low reasoning only for GPT-OSS on the exact Cloudflare host',async()=>{
+  const bodies:any[]=[];
+  vi.stubGlobal('fetch',async(_url:unknown,init:RequestInit)=>{bodies.push(JSON.parse(String(init.body)));return Response.json({choices:[{finish_reason:'stop',message:{content:'4'}}]});});
+  for(const [host,model] of [['api.cloudflare.com','@cf/openai/gpt-oss-120b'],['api.cloudflare.com','@cf/qwen/qwen3-30b-a3b-fp8'],['other.example','@cf/openai/gpt-oss-120b'],['api.cloudflare.com.other.example','@cf/openai/gpt-oss-120b']])await withRuntime({AI_BASE_URL:'https://'+host+'/v1',AI_MODEL:model,AI_API_KEY:'synthetic-secret'},()=>requestCompletion(messages));
+  expect(bodies[0].reasoning_effort).toBe('low');
+  for(const body of bodies.slice(1))expect(body).not.toHaveProperty('reasoning_effort');
+  for(const body of bodies)expect(body).not.toHaveProperty('chat_template_kwargs');
+ });
  it('disables NVIDIA thinking without forwarding its kwargs to other providers',async()=>{
   const requests:{url:string,init:RequestInit}[]=[];
   vi.stubGlobal('fetch',async(url:string,init:RequestInit)=>{requests.push({url,init});return Response.json({choices:[{finish_reason:'stop',message:{content:'4'}}]});});

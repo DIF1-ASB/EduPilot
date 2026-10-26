@@ -1,4 +1,4 @@
-# Template only. Not installed or enabled by local implementation.
+# Production template for the pinned EduPilot VPS runtime.
 [Unit]
 Description=EduPilot bounded generation worker
 After=network-online.target
@@ -6,16 +6,23 @@ After=network-online.target
 [Service]
 Type=simple
 User=edupilot
+Group=edupilot
 WorkingDirectory=/opt/edupilot/current
+Environment=NODE_ENV=production
+Environment=NODE_OPTIONS=--max-old-space-size=384
 EnvironmentFile=/etc/edupilot/runtime.env
-ExecStart=/usr/bin/node --import tsx scripts/generation-worker.ts
+EnvironmentFile=/etc/edupilot/generation.env
+ExecStart=/opt/node-v22.23.3-linux-x64/bin/node --import tsx scripts/generation-worker.ts
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=20
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
+ProtectHome=true
 ReadWritePaths=/var/lib/edupilot
+MemoryHigh=384M
+MemoryMax=640M
 UMask=0077
 
 [Install]
