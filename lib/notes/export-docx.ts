@@ -1,12 +1,13 @@
 import {Document,Packer,Paragraph,TextRun,ImageRun,HeadingLevel,Table,TableRow,TableCell,WidthType,BorderStyle,VerticalAlign,AlignmentType,TableLayoutType,type ParagraphChild} from 'docx';
 import {articleExportData,articleToExportBlocks,tableColumnFractions,type ArticleExportMaterial,type ExportBlock,type ExportInline} from './export-blocks';
 import {renderFormulaAsset} from '@notes-export-math';
+import {NotesExportError,requireFormulaSpace} from './export-errors';
 export async function exportNotesArticleDocx(material:ArticleExportMaterial):Promise<Uint8Array>{
  const {doc,title,subtitle}=articleExportData(material),blocks=articleToExportBlocks(doc);
  const runs=async(inlines:ExportInline[],available=657):Promise<ParagraphChild[]>=>{
   const result:ParagraphChild[]=[];
   for(const item of inlines){
-   if(item.kind==='math'){const asset=await renderFormulaAsset(item.text,{display:false}),scale=Math.min(1,available/asset.width);result.push(new ImageRun({data:asset.png,type:'png',transformation:{width:asset.width*scale,height:asset.height*scale},altText:{name:'Формула',description:item.text,title:'Формула'}}));continue;}
+   if(item.kind==='math'){const asset=await renderFormulaAsset(item.text,{display:false});requireFormulaSpace(asset.width,asset.height,available,840);result.push(new ImageRun({data:asset.png,type:'png',transformation:{width:asset.width,height:asset.height},altText:{name:'Формула',description:item.text,title:'Формула'}}));continue;}
    for(const [index,text]of item.text.split('\n').entries())result.push(new TextRun({text,...(index?{break:1}:{}),bold:item.bold,italics:item.italic,strike:item.strike,font:item.code?'Consolas':undefined}));
   }return result;
  };
@@ -14,8 +15,10 @@ export async function exportNotesArticleDocx(material:ArticleExportMaterial):Pro
  if(doc.demo)children.push(new Paragraph({text:'Демонстрационный шаблон',keepNext:true}));
  async function add(items:ExportBlock[],depth=0){for(const block of items){
   const indent=depth?{left:Math.min(depth,6)*280}:undefined;
+  const available=(9866-Math.min(depth,6)*280)/15;
   if(block.kind==='table'){
    const total=9866-Math.min(depth,6)*280,widths=tableColumnFractions(block).map(f=>Math.floor(total*f));
+   if(widths.some(w=>w-200<440))throw new NotesExportError('Слишком много узких столбцов для Word. Разделите таблицу на несколько частей.');
    widths[widths.length-1]+=total-widths.reduce((a,b)=>a+b,0);
    const border={style:BorderStyle.SINGLE,size:4,color:'D9D9D9'};
    const rows:TableRow[]=[];
@@ -31,17 +34,17 @@ export async function exportNotesArticleDocx(material:ArticleExportMaterial):Pro
   }
   if(block.kind==='list'){for(const [index,item] of block.items.entries()){
    const first=item[0],label=block.ordered?`${block.start+index}. `:'• ';
-   if(first?.kind==='paragraph')children.push(new Paragraph({children:[new TextRun(label),...await runs(first.inlines)],indent:{left:Math.min(depth+1,6)*280,hanging:220}}));
+   if(first?.kind==='paragraph')children.push(new Paragraph({children:[new TextRun(label),...await runs(first.inlines,(9866-Math.min(depth+1,6)*280)/15)],indent:{left:Math.min(depth+1,6)*280,hanging:220}}));
    else children.push(new Paragraph({text:label,indent}));
    await add(first?.kind==='paragraph'?item.slice(1):item,depth+1);
   }continue;}
-  if(block.kind==='heading'){children.push(new Paragraph({children:await runs(block.inlines),heading:block.level<=2?HeadingLevel.HEADING_1:HeadingLevel.HEADING_2,keepNext:true,indent}));continue;}
+  if(block.kind==='heading'){children.push(new Paragraph({children:await runs(block.inlines,available),heading:block.level<=2?HeadingLevel.HEADING_1:HeadingLevel.HEADING_2,keepNext:true,indent}));continue;}
   if(block.kind==='math'){
-   const asset=await renderFormulaAsset(block.text,{display:true}),scale=Math.min(1,(657-depth*19)/asset.width,840/asset.height);
-   children.push(new Paragraph({children:[new ImageRun({data:asset.png,type:'png',transformation:{width:asset.width*scale,height:asset.height*scale},altText:{name:'Формула',description:block.text,title:'Формула'}})],indent,spacing:{before:120,after:180}}));continue;
+   const asset=await renderFormulaAsset(block.text,{display:true});requireFormulaSpace(asset.width,asset.height,available,840);
+   children.push(new Paragraph({children:[new ImageRun({data:asset.png,type:'png',transformation:{width:asset.width,height:asset.height},altText:{name:'Формула',description:block.text,title:'Формула'}})],indent,spacing:{before:120,after:180}}));continue;
   }
   if(block.kind==='code'){for(const line of block.text.split('\n'))children.push(new Paragraph({children:[new TextRun({text:line||' ',font:'Consolas',size:20})],indent,spacing:{after:40}}));continue;}
-  children.push(new Paragraph({children:await runs(block.inlines),indent}));
+  children.push(new Paragraph({children:await runs(block.inlines,available),indent}));
  }}
  await add(blocks);
  const word=new Document({

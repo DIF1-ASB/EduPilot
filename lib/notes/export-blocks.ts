@@ -5,6 +5,7 @@ import remarkMath from 'remark-math';
 import type {Root,RootContent,PhrasingContent} from 'mdast';
 import {normalizeMathMarkdown} from '../content/math';
 import {validateNotesArticle,type NotesArticleDocument} from './article';
+import {NotesExportError} from './export-errors';
 export type ExportInline={kind:'text'|'math';text:string;bold?:boolean;italic?:boolean;code?:boolean;strike?:boolean};
 export type ExportTable={kind:'table';align:('left'|'right'|'center'|null)[];rows:ExportInline[][][]};
 export type ExportBlock={kind:'heading';level:number;inlines:ExportInline[]}|{kind:'paragraph';inlines:ExportInline[]}|{kind:'list';ordered:boolean;start:number;items:ExportBlock[][]}|{kind:'code';text:string}|{kind:'math';text:string}|ExportTable;
@@ -38,7 +39,13 @@ export function articleToExportBlocks(doc:NotesArticleDocument):ExportBlock[]{
   if(node.type==='code')return [{kind:'code',text:node.value}];
   if(node.type==='list')return [{kind:'list',ordered:!!node.ordered,start:node.start??1,items:node.children.map(item=>blocks(item.children))}];
   if(node.type==='blockquote')return blocks(node.children);
-  if(node.type==='table')return [{kind:'table',align:node.align??[],rows:node.children.map(row=>row.children.map(cell=>inline(cell.children)))}];
+  if(node.type==='table'){
+   const count=node.children[0]?.children.length??0;
+   return [{kind:'table',align:node.align??[],rows:node.children.map(row=>{
+    if(row.children.length>count)throw new NotesExportError('В строке таблицы больше ячеек, чем в заголовке. Исправьте число ячеек перед скачиванием.');
+    return Array.from({length:count},(_,col)=>row.children[col]?inline(row.children[col].children):[]);
+   })}];
+  }
   if(node.type==='html')throw Error('HTML не поддерживается при экспорте конспекта.');
   return [];
  });

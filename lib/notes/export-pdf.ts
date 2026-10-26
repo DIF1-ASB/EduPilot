@@ -3,6 +3,7 @@ import fontkit from '@pdf-lib/fontkit';
 import {getRuntime} from '../runtime';
 import {articleExportData,articleToExportBlocks,tableColumnFractions,type ArticleExportMaterial,type ExportBlock,type ExportInline,type ExportTable} from './export-blocks';
 import {renderFormulaAsset} from '@notes-export-math';
+import {NotesExportError,requireFormulaSpace} from './export-errors';
 type Op={kind:'text'|'image'|'border';x:number;y:number;width:number;height:number;text?:string;size?:number;bold?:boolean;italic?:boolean;strike?:boolean;png?:Uint8Array;header?:boolean};
 type Piece={text?:string;png?:Uint8Array;w:number;h:number;bold?:boolean;italic?:boolean;strike?:boolean};
 type Line={pieces:Piece[];height:number;width:number};
@@ -26,7 +27,7 @@ async function layout(material:ArticleExportMaterial,font:PDFFont){
   const flush=()=>{lines.push({pieces,height,width:used});pieces=[];used=0;height=size*1.4;};
   for(const item of inlines){
    if(item.kind==='math'){
-    const asset=await renderFormulaAsset(item.text,{display:false}),scale=Math.min(.75,available/asset.width,(H-2*M-40)/asset.height),w=asset.width*scale,h=asset.height*scale;
+    const asset=await renderFormulaAsset(item.text,{display:false}),w=asset.width*.75,h=asset.height*.75;requireFormulaSpace(w,h,available,H-2*M-40);
     if(used+w>available&&pieces.length)flush();pieces.push({png:asset.png,w,h});used+=w;height=Math.max(height,h+6);continue;
    }
    for(const token of item.text.split(/(\n|[^\S\n]+)/u).filter(Boolean)){
@@ -51,7 +52,7 @@ async function layout(material:ArticleExportMaterial,font:PDFFont){
  const table=async(block:ExportTable,depth:number)=>{
   if(!block.rows.length)return;
   const left=M+Math.min(depth,6)*14,widths=tableColumnFractions(block).map(f=>f*(W-M-left)),size=11;
-  if(widths.some(w=>w-2*PAD<size*2))throw Object.assign(Error('Слишком много узких столбцов для PDF. Разделите таблицу или скачайте Word.'),{status:422});
+  if(widths.some(w=>w-2*PAD<size*2))throw new NotesExportError('Слишком много узких столбцов для PDF. Разделите таблицу на несколько частей.');
   const rows=await Promise.all(block.rows.map((row,index)=>Promise.all(widths.map((w,col)=>wrap((row[col]??[]).map(i=>({...i,bold:index===0||i.bold})),size,Math.max(1,w-2*PAD))))));
   const rowHeight=(cells:Line[][])=>Math.max(size*1.4,...cells.map(lines=>lines.reduce((n,l)=>n+l.height,0)))+2*PAD;
   const drawCells=(cells:Line[][],height:number,header:boolean)=>{
@@ -63,7 +64,7 @@ async function layout(material:ArticleExportMaterial,font:PDFFont){
    }y-=height;
   };
   const header=rows[0],headerHeight=rowHeight(header);
-  if(headerHeight+size*1.4+2*PAD>H-2*M)throw Object.assign(Error('Заголовок таблицы слишком велик для PDF. Сократите его или скачайте Word.'),{status:422});
+  if(headerHeight+size*1.4+2*PAD>H-2*M)throw new NotesExportError('Заголовок таблицы слишком велик для PDF. Сократите его или скачайте Word.');
   ensure(headerHeight+(rows.length>1?Math.min(rowHeight(rows[1]),size*1.4+2*PAD):0));drawCells(header,headerHeight,true);
   for(const original of rows.slice(1)){
    let cells=original.map(lines=>[...lines]);
@@ -75,7 +76,7 @@ async function layout(material:ArticleExportMaterial,font:PDFFont){
     if(y-M<Math.max(...cells.map(lines=>lines[0]?.height??0))+2*PAD){newPage();drawCells(header,headerHeight,true);}
     const room=y-M-2*PAD;
     const chunk=cells.map(lines=>{let used=0,count=0;for(const line of lines){if(used+line.height>room+.001)break;used+=line.height;count++;}return lines.slice(0,count);});
-    if(!chunk.some(lines=>lines.length))throw Object.assign(Error('Строка таблицы не помещается в PDF. Скачайте Word.'),{status:422});
+    if(!chunk.some(lines=>lines.length))throw new NotesExportError('Строка таблицы не помещается в PDF. Скачайте Word.');
     fullHeight=rowHeight(chunk);drawCells(chunk,fullHeight,false);cells=cells.map((lines,col)=>lines.slice(chunk[col].length));
     if(cells.some(lines=>lines.length)){newPage();drawCells(header,headerHeight,true);}
    }
@@ -88,7 +89,7 @@ async function layout(material:ArticleExportMaterial,font:PDFFont){
   if(block.kind==='list'){for(const [i,item]of block.items.entries()){const first=item[0];if(first?.kind==='paragraph')await paragraph([{kind:'text',text:block.ordered?`${block.start+i}. `:'• '},...first.inlines],11,depth+1);await add(first?.kind==='paragraph'?item.slice(1):item,depth+1);}continue;}
   if(block.kind==='heading'){const size=block.level<=2?14:12.5;const text=block.inlines.map(i=>i.text).join('');ensure(Math.ceil(Math.max(1,width(text,size)/WIDTH))*size*1.4+45);y-=8;await paragraph(block.inlines.map(i=>({...i,bold:true})),size,depth);continue;}
   if(block.kind==='math'){
-   const a=await renderFormulaAsset(block.text,{display:true}),available=WIDTH-Math.min(depth,6)*14,scale=Math.min(.75,available/a.width,(H-2*M-24)/a.height),w=a.width*scale,h=a.height*scale;
+   const a=await renderFormulaAsset(block.text,{display:true}),available=WIDTH-Math.min(depth,6)*14,w=a.width*.75,h=a.height*.75;requireFormulaSpace(w,h,available,H-2*M-24);
    ensure(h+14);y-=h+4;push({kind:'image',x:M+Math.min(depth,6)*14,y,width:w,height:h,png:a.png});y-=10;continue;
   }
   if(block.kind==='code'){await paragraph([{kind:'text',text:block.text,code:true}],10,depth);continue;}

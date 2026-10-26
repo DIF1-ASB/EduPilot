@@ -1,9 +1,10 @@
-import {describe,it,expect} from 'vitest';
+import {describe,it,expect,vi} from 'vitest';
 import JSZip from 'jszip';
 import {PDFDocument,PDFArray,PDFRawStream,decodePDFRawStream} from 'pdf-lib';
 import {articleToExportBlocks} from '../lib/notes/export-blocks';
 import {exportNotesArticleDocx} from '../lib/notes/export-docx';
 import {exportNotesArticlePdf,layoutNotesArticlePdf} from '../lib/notes/export-pdf';
+import * as pdfExporter from '../lib/notes/export-pdf';
 import {exportMaterial} from '../lib/export';
 import {openPlatformFixture} from './helpers/platform';
 const doc={schemaVersion:3 as const,kind:'notes-article' as const,demo:false,bodyMarkdown:String.raw`## Дроби и степени
@@ -25,6 +26,27 @@ $literal$ **not emphasis**
 `.replaceAll('\\`','`')};
 const material={type:'notes',title:'Дроби и степени',subject:'Математика',grade:7,userId:'synthetic',contentJson:doc};
 describe('prose notes exports',()=>{
+ it('refuses to shrink a table formula below the readable whole-page rendering size',async()=>{
+  const formula=Array(18).fill('x').join('+'),fixture={...material,contentJson:{...doc,bodyMarkdown:`| А | Б | В | Г |\n| --- | --- | --- | --- |\n| $${formula}$ | 1 | 2 | 3 |`}};
+  for(const exporter of [exportNotesArticleDocx,exportNotesArticlePdf]){
+   const error=await exporter(fixture).then(()=>null,error=>error);expect(error).toMatchObject({status:422});expect(error.message).toMatch(/формул.*помещ|разбей/iu);
+  }
+ });
+ it('pads short GFM rows and rejects excess cells instead of crashing or dropping text',async()=>{
+  const short={...doc,bodyMarkdown:'| А | Б |\n| --- | --- |\n| Только |'};
+  const zip=await JSZip.loadAsync(await exportNotesArticleDocx({...material,contentJson:short})),xml=await zip.file('word/document.xml')!.async('string');
+  expect((xml.match(/<w:tc>/g)||[]).length).toBe(4);
+  expect(()=>articleToExportBlocks({...doc,bodyMarkdown:'| А | Б |\n| --- | --- |\n| Х | У | Лишнее |'})).toThrow(/ячеек/iu);
+ });
+ it('returns a safe actionable table message at the actual download API and hides internal errors',async()=>{
+  const f=await openPlatformFixture('article-table-error');try{
+   const header=Array(30).fill('Колонка').join(' | '),rule=Array(30).fill('---').join(' | ');
+   const m=await f.client.material.create({data:{userId:f.student.id,type:'notes',title:'Таблица',subject:'Математика',grade:7,contentJson:{...doc,bodyMarkdown:`| ${header} |\n| ${rule} |`}}});
+   for(const format of ['pdf','docx']){const response=await f.call(`materials/${m.id}/export?format=${format}`,'GET',undefined,f.student.cookie);expect(response.status).toBe(422);expect(JSON.stringify(await response.json())).toMatch(/столбц/iu);}
+   const spy=vi.spyOn(pdfExporter,'exportNotesArticlePdf').mockRejectedValue(Object.assign(Error('INTERNAL_PRIVATE_ERROR'),{status:422}));
+   try{const error=await exportMaterial(material,'pdf',false).then(()=>null,error=>error);expect(error.message).not.toContain('INTERNAL_PRIVATE_ERROR');expect(error.status).toBe(422);}finally{spy.mockRestore();}
+  }finally{await f.close();}
+ });
  it('keeps consecutive formula lines separated in Word, including list paragraphs',async()=>{
   const fixture={...material,contentJson:{...doc,bodyMarkdown:'- Решение:\n  $$3x=15$$\n  $$x=5$$\n  Проверка: верно.'}};
   const zip=await JSZip.loadAsync(await exportNotesArticleDocx(fixture)),xml=await zip.file('word/document.xml')!.async('string');
@@ -61,7 +83,7 @@ describe('prose notes exports',()=>{
  });
  it('refuses an unreadably narrow PDF table rather than painting text through cell borders',async()=>{
   const header=Array.from({length:30},()=> 'Колонка').join(' | '),rule=Array.from({length:30},()=> '---').join(' | ');
-  await expect(exportNotesArticlePdf({...material,contentJson:{...doc,bodyMarkdown:`| ${header} |\n| ${rule} |`}})).rejects.toMatchObject({status:422});
+  for(const exporter of [exportNotesArticlePdf,exportNotesArticleDocx]){const error=await exporter({...material,contentJson:{...doc,bodyMarkdown:`| ${header} |\n| ${rule} |`}}).then(()=>null,error=>error);expect(error).toMatchObject({status:422});}
  });
  it('builds semantic blocks with nested emphasis, math and literal code',()=>{
   const blocks=articleToExportBlocks(doc);expect(blocks.map(b=>b.kind)).toEqual(['heading','paragraph','list','math','heading','code']);
