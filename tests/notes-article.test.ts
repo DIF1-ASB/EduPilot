@@ -7,6 +7,12 @@ import {articleFixture} from './helpers/online-content';
 import {withoutAnswers} from '../lib/domain';
 afterEach(()=>vi.unstubAllGlobals());
 describe('coherent prose notes contract',()=>{
+ it('rejects an English connector in Russian prose without rejecting equations, code or quotations',()=>{
+  const good=articleFixture(),context={subject:'Математика'};
+  expect(()=>parseArticleReply(JSON.stringify({...good,bodyMarkdown:good.bodyMarkdown+'\nВыполните проверку within исходного уравнения.'}),context)).toThrow(/языков/);
+  for(const extra of ['\nФормула $x \\in A$.','\n\n    within the loop','\nСлово «within» переводится как «внутри».'])expect(()=>parseArticleReply(JSON.stringify({...good,bodyMarkdown:good.bodyMarkdown+extra}),context)).not.toThrow();
+  expect(()=>parseArticleReply(JSON.stringify({...good,bodyMarkdown:good.bodyMarkdown+'\nRead within the text.'}),{subject:'Английский язык'})).not.toThrow();
+ });
  it('preserves the article discriminator for a safe student export instead of flattening Markdown',()=>{
   const content=articleFixture(),safe=withoutAnswers({contentJson:content,metadataJson:{privateField:'must-not-leak'}});expect(safe.contentJson).toEqual(content);expect(safe.metadataJson).toEqual({});
  });

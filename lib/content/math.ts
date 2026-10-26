@@ -3,7 +3,7 @@ import remarkParse from 'remark-parse';
 import type {Nodes} from 'mdast';
 
 /** Normalize presentation only: never rewrite mathematical meaning or code. */
-export const mathPrompt='Формулы: $...$ внутри строки, $$ на отдельных строках для блочных. Русский текст внутри формул оборачивай в \\text{...}. В JSON экранируй каждый обратный слеш вторым слешем. Не включай скрытые рассуждения.';
+export const mathPrompt='Формулы: $...$ внутри строки, $$ на отдельных строках для блочных (отдельная строка $$, затем формула, затем отдельная строка $$). Простые выражения пиши без лишних LaTeX-команд, например $3x+5=20$. Обычные русские пояснения оставляй вне формул; если подпись необходима внутри, используй \\text{...}. Верни синтаксически корректный JSON: каждый обратный слеш LaTeX должен быть удвоен в самом JSON, иначе команды превращаются в скрытые управляющие символы. Пример корректной JSON-строки с дробью: '+JSON.stringify({bodyMarkdown:String.raw`Доля $\frac{1}{2}$.`})+'. Не включай скрытые рассуждения.';
 function normalizeProse(source: string): string {
   return source
       .replace(/\\\[([\s\S]*?)\\\]/g, (_, body: string) => `\n$$\n${body.trim()}\n$$\n`)

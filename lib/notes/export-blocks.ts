@@ -6,7 +6,15 @@ import type {Root,RootContent,PhrasingContent} from 'mdast';
 import {normalizeMathMarkdown} from '../content/math';
 import {validateNotesArticle,type NotesArticleDocument} from './article';
 export type ExportInline={kind:'text'|'math';text:string;bold?:boolean;italic?:boolean;code?:boolean;strike?:boolean};
-export type ExportBlock={kind:'heading';level:number;inlines:ExportInline[]}|{kind:'paragraph';inlines:ExportInline[]}|{kind:'list';ordered:boolean;start:number;items:ExportBlock[][]}|{kind:'code';text:string}|{kind:'math';text:string};
+export type ExportTable={kind:'table';align:('left'|'right'|'center'|null)[];rows:ExportInline[][][]};
+export type ExportBlock={kind:'heading';level:number;inlines:ExportInline[]}|{kind:'paragraph';inlines:ExportInline[]}|{kind:'list';ordered:boolean;start:number;items:ExportBlock[][]}|{kind:'code';text:string}|{kind:'math';text:string}|ExportTable;
+/** Allocate more space to descriptive columns, without starving short values. */
+export function tableColumnFractions(table:ExportTable):number[]{
+ const count=table.rows[0]?.length??0;
+ const weights=Array.from({length:count},(_,col)=>Math.sqrt(Math.max(8,...table.rows.map(row=>Math.min(80,(row[col]??[]).reduce((n,i)=>n+i.text.length,0))))));
+ const sum=weights.reduce((a,b)=>a+b,0);
+ return weights.map(w=>.4/count+.6*w/sum);
+}
 export type ArticleExportMaterial={title:string;subject:string;grade:number;contentJson:unknown};
 export function articleToExportBlocks(doc:NotesArticleDocument):ExportBlock[]{
  const source=validateNotesArticle(doc,{ready:false});
@@ -30,7 +38,7 @@ export function articleToExportBlocks(doc:NotesArticleDocument):ExportBlock[]{
   if(node.type==='code')return [{kind:'code',text:node.value}];
   if(node.type==='list')return [{kind:'list',ordered:!!node.ordered,start:node.start??1,items:node.children.map(item=>blocks(item.children))}];
   if(node.type==='blockquote')return blocks(node.children);
-  if(node.type==='table')return node.children.map(row=>({kind:'paragraph',inlines:row.children.flatMap((cell,i)=>[...(i?[{kind:'text' as const,text:' | '}]:[]),...inline(cell.children)])}));
+  if(node.type==='table')return [{kind:'table',align:node.align??[],rows:node.children.map(row=>row.children.map(cell=>inline(cell.children)))}];
   if(node.type==='html')throw Error('HTML не поддерживается при экспорте конспекта.');
   return [];
  });

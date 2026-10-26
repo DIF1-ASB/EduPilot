@@ -1,6 +1,6 @@
 import {describe,it,expect} from 'vitest';
 import JSZip from 'jszip';
-import {PDFDocument} from 'pdf-lib';
+import {PDFDocument,PDFArray,PDFRawStream,decodePDFRawStream} from 'pdf-lib';
 import {articleToExportBlocks} from '../lib/notes/export-blocks';
 import {exportNotesArticleDocx} from '../lib/notes/export-docx';
 import {exportNotesArticlePdf,layoutNotesArticlePdf} from '../lib/notes/export-pdf';
@@ -25,6 +25,44 @@ $literal$ **not emphasis**
 `.replaceAll('\\`','`')};
 const material={type:'notes',title:'Дроби и степени',subject:'Математика',grade:7,userId:'synthetic',contentJson:doc};
 describe('prose notes exports',()=>{
+ it('keeps consecutive formula lines separated in Word, including list paragraphs',async()=>{
+  const fixture={...material,contentJson:{...doc,bodyMarkdown:'- Решение:\n  $$3x=15$$\n  $$x=5$$\n  Проверка: верно.'}};
+  const zip=await JSZip.loadAsync(await exportNotesArticleDocx(fixture)),xml=await zip.file('word/document.xml')!.async('string');
+  expect((xml.match(/<w:br\/>/g)||[]).length).toBe(3);
+  expect(xml).toMatch(/<w:drawing>[\s\S]*?<w:br\/>[\s\S]*?<w:drawing>/);
+ });
+ it('keeps an italic PDF baseline horizontal rather than tilting each word',async()=>{
+  const bytes=await exportNotesArticlePdf({...material,contentJson:{...doc,bodyMarkdown:'*Длинное определение термина*'}}),pdf=await PDFDocument.load(bytes);
+  const streams=pdf.getPages()[0].node.Contents() as PDFArray;
+  const text=streams.asArray().map(ref=>{const stream=pdf.context.lookup(ref);if(!(stream instanceof PDFRawStream))throw Error('Missing content stream');return new TextDecoder().decode(decodePDFRawStream(stream).decode());}).join('\n');
+  const matrices=[...text.matchAll(/([\d.-]+) ([\d.-]+) ([\d.-]+) ([\d.-]+) [\d.-]+ [\d.-]+ Tm/g)].map(m=>m.slice(1).map(Number));
+  expect(matrices.some(m=>m[2]>.1)).toBe(true);
+  expect(matrices.every(m=>m[1]===0)).toBe(true);
+ });
+ it('preserves real table cells, formatting and repeating headers in both exports',async()=>{
+  const table='| Величина | Описание |\n| :--- | ---: |\n'+Array.from({length:48},(_,i)=>`| $x_${i}$ | **Строка ${i}** с пояснением и единицами измерения |`).join('\n');
+  const fixture={...material,contentJson:{...doc,bodyMarkdown:table}};
+  expect(articleToExportBlocks(fixture.contentJson)[0]).toMatchObject({kind:'table',align:['left','right']});
+  const zip=await JSZip.loadAsync(await exportNotesArticleDocx(fixture)),xml=await zip.file('word/document.xml')!.async('string');
+  expect(xml).toContain('<w:tbl>');expect(xml).toContain('<w:tblHeader');expect(xml).toContain('D9D9D9');expect((xml.match(/<w:tc>/g)||[]).length).toBe(98);
+  expect((xml.match(/<w:cantSplit\/>/g)||[]).length).toBe(49);
+  const layout=await layoutNotesArticlePdf(fixture);expect(layout.pages.length).toBeGreaterThan(1);
+  for(const page of layout.pages){expect(page.some(op=>op.text==='Величина')).toBe(true);expect(page.some(op=>op.kind==='border')).toBe(true);for(const op of page){expect(op.x).toBeGreaterThanOrEqual(51);expect(op.x+op.width).toBeLessThanOrEqual(544.3);expect(op.y).toBeGreaterThanOrEqual(51);expect(op.y+op.height).toBeLessThanOrEqual(791);}}
+ });
+ it('splits a very tall table row across pages without dropping content',async()=>{
+  const fixture={...material,contentJson:{...doc,bodyMarkdown:'| Термин | Объяснение |\n| --- | --- |\n| Слово | '+('Содержательное объяснение. '.repeat(300))+'КОНЕЦ |'}};
+  const layout=await layoutNotesArticlePdf(fixture);expect(layout.pages.length).toBeGreaterThan(1);
+  expect(layout.pages.flat().some(op=>op.text==='КОНЕЦ')).toBe(true);
+  for(const page of layout.pages)expect(page.some(op=>op.text==='Термин')).toBe(true);
+ });
+ it('retains an intentionally blank table row rather than deleting it from the PDF',async()=>{
+  const layout=await layoutNotesArticlePdf({...material,contentJson:{...doc,bodyMarkdown:'| Слово | Значение |\n| --- | --- |\n| | |\n| Корень | Решение |'}});
+  expect(layout.pages.flat().filter(op=>op.kind==='border')).toHaveLength(6);
+ });
+ it('refuses an unreadably narrow PDF table rather than painting text through cell borders',async()=>{
+  const header=Array.from({length:30},()=> 'Колонка').join(' | '),rule=Array.from({length:30},()=> '---').join(' | ');
+  await expect(exportNotesArticlePdf({...material,contentJson:{...doc,bodyMarkdown:`| ${header} |\n| ${rule} |`}})).rejects.toMatchObject({status:422});
+ });
  it('builds semantic blocks with nested emphasis, math and literal code',()=>{
   const blocks=articleToExportBlocks(doc);expect(blocks.map(b=>b.kind)).toEqual(['heading','paragraph','list','math','heading','code']);
   expect(JSON.stringify(blocks)).toContain('важный');expect(JSON.stringify(blocks)).toContain('"bold":true');

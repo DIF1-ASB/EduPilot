@@ -5,6 +5,17 @@ import {quizFixture} from './helpers/online-content';
 const input={title:'Линейные уравнения',subject:'Математика',grade:7};
 afterEach(()=>vi.unstubAllGlobals());
 describe('online single-choice profile',()=>{
+ it('rejects numerically identical choices even if fractions and decimals look different',()=>{
+  const params=onlineTestInputSchema.parse(input),good=quizFixture();
+  good.variants[0].questions[0].options.forEach((o,i)=>{o.label=['1/2','0,5','2','3'][i];});
+  expect(()=>parseOnlineTestReply(JSON.stringify(good),params)).toThrow(/числов/iu);
+  good.variants[0].questions[0].options[1].label='0,6';expect(()=>parseOnlineTestReply(JSON.stringify(good),params)).not.toThrow();
+ });
+ it('rejects foreign connector words in Russian generated questions but permits formula symbols',()=>{
+  const params=onlineTestInputSchema.parse(input),good=quizFixture();good.variants[0].questions[0].prompt='Найдите корень within допустимого промежутка.';
+  expect(()=>parseOnlineTestReply(JSON.stringify(good),params)).toThrow(/языков/);
+  good.variants[0].questions[0].prompt='Решите $x+1=2$.';expect(()=>parseOnlineTestReply(JSON.stringify(good),params)).not.toThrow();
+ });
  it('offers an explicitly unfinished demo and bounds each provider generation to one upstream call',async()=>{
   const params=onlineTestInputSchema.parse(input),draft=await new MockAIProvider().generateOnlineTest(params);
   expect(draft.demo).toBe(true);expect(draft.variants[0].questions).toHaveLength(10);
