@@ -22,7 +22,7 @@ export function renderFormulaAsset(latex:string,{display}:{display:boolean}):Pro
  const task=tail.then(async()=>{
   if(!latex.trim()||latex.length>2000||/[\u0000-\u0008\u000b-\u001f]/u.test(latex)||/\\(?:require|href|url|includegraphics|html\w*|class|style|cssId|def|gdef|edef|newcommand|renewcommand|let|csname|input|unicode)\b/i.test(latex))throw Error('Недопустимая или слишком длинная формула.');
   const node=await document.convertPromise(latex,{display,em:16,ex:8,containerWidth:658});
-  const outer=adaptor.outerHTML(node),start=outer.indexOf('<svg'),end=outer.lastIndexOf('</svg>');
+  const outer=adaptor.serializeXML(node),start=outer.indexOf('<svg'),end=outer.lastIndexOf('</svg>');
   if(start<0||end<start||/data-mml-node="merror"/.test(outer))throw Error('Не удалось отобразить формулу.');
   let svg=outer.slice(start,end+6);const box=svg.match(/viewBox="([^"]+)"/);if(!box)throw Error('Отсутствуют размеры формулы.');
   const [, ,w,h]=box[1].trim().split(/\s+/).map(Number);

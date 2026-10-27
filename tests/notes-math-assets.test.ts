@@ -1,6 +1,13 @@
 import {describe,it,expect} from 'vitest';
 import {renderFormulaAsset} from '../lib/notes/export-math';
 describe('local formula assets',()=>{
+ it('renders literal comparison signs as the same glyphs as their TeX operators in valid SVG XML',async()=>{
+  for(const display of [false,true]){
+   const expected=await renderFormulaAsset(String.raw`2 \lt 7`,{display}),literal=await renderFormulaAsset('2 < 7',{display});
+   expect(literal.width).toBe(expected.width);expect(literal.height).toBe(expected.height);expect(literal.png).toEqual(expected.png);
+   const quoted=await renderFormulaAsset(String.raw`\text{a & b < c}`,{display});expect(Array.from(quoted.png.slice(0,8))).toEqual([137,80,78,71,13,10,26,10]);
+  }
+ });
  it('renders fractions, powers and Cyrillic arrow labels as finite transparent PNGs',async()=>{
   for(const latex of [String.raw`\frac{3}{4}+x^2`,String.raw`A\xrightarrow{\text{нагревание}}B`]){
    const asset=await renderFormulaAsset(latex,{display:true});
