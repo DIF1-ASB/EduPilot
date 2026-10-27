@@ -1,6 +1,6 @@
 import {describe,it,expect,vi} from 'vitest';
 import JSZip from 'jszip';
-import {PDFDocument,PDFArray,PDFRawStream,decodePDFRawStream} from 'pdf-lib';
+import {PDFDocument,PDFArray,PDFDict,PDFName,PDFRawStream,decodePDFRawStream} from 'pdf-lib';
 import {articleToExportBlocks} from '../lib/notes/export-blocks';
 import {exportNotesArticleDocx} from '../lib/notes/export-docx';
 import {exportNotesArticlePdf,layoutNotesArticlePdf} from '../lib/notes/export-pdf';
@@ -26,6 +26,23 @@ $literal$ **not emphasis**
 `.replaceAll('\\`','`')};
 const material={type:'notes',title:'Дроби и степени',subject:'Математика',grade:7,userId:'synthetic',contentJson:doc};
 describe('prose notes exports',()=>{
+ it('preserves mathematical Unicode in prose, headings and tables without replacing unsupported characters',async()=>{
+  const fixture={...material,contentJson:{...doc,bodyMarkdown:'## Сумма ≥10\n\nПри сумме ≥10 переносим единицу. Проверяем 3≤5 и 3≠4.\n\n| Условие | Проверка |\n| --- | --- |\n| **Сумма ≥10** | Верно |'}};
+  const pdf=await PDFDocument.load(await exportNotesArticlePdf(fixture));
+  const maps:string[]=[];
+  for(const page of pdf.getPages()){
+   const fonts=page.node.Resources()!.lookup(PDFName.of('Font'),PDFDict);
+   for(const [,ref]of fonts.entries()){
+    const font=pdf.context.lookup(ref,PDFDict),cmap=pdf.context.lookup(font.get(PDFName.of('ToUnicode')));
+    if(!(cmap instanceof PDFRawStream))throw Error('Missing Unicode character map');
+    maps.push(new TextDecoder().decode(decodePDFRawStream(cmap).decode()));
+   }
+  }
+  for(const codepoint of ['2265','2264','2260'])expect(maps.join('\n')).toMatch(new RegExp('<[0-9a-f]+>\\s*<'+codepoint+'>','i'));
+  const layout=await layoutNotesArticlePdf(fixture);expect(layout.pages.flat().some(op=>op.text?.includes('≥'))).toBe(true);
+  for(const op of layout.pages.flat()){expect(op.x+op.width).toBeLessThanOrEqual(544.3);expect(op.y).toBeGreaterThanOrEqual(51);}
+  await expect(exportNotesArticlePdf({...material,contentJson:{...doc,bodyMarkdown:'Неизвестный символ 🚀'}})).rejects.toMatchObject({status:422});
+ });
  it('refuses to shrink a table formula below the readable whole-page rendering size',async()=>{
   const formula=Array(18).fill('x').join('+'),fixture={...material,contentJson:{...doc,bodyMarkdown:`| А | Б | В | Г |\n| --- | --- | --- | --- |\n| $${formula}$ | 1 | 2 | 3 |`}};
   for(const exporter of [exportNotesArticleDocx,exportNotesArticlePdf]){

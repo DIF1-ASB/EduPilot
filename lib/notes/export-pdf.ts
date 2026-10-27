@@ -7,20 +7,32 @@ import {NotesExportError,requireFormulaSpace} from './export-errors';
 type Op={kind:'text'|'image'|'border';x:number;y:number;width:number;height:number;text?:string;size?:number;bold?:boolean;italic?:boolean;strike?:boolean;png?:Uint8Array;header?:boolean};
 type Piece={text?:string;png?:Uint8Array;w:number;h:number;bold?:boolean;italic?:boolean;strike?:boolean};
 type Line={pieces:Piece[];height:number;width:number};
+type FontRun={text:string;font:PDFFont};
+type Typography={runs:(text:string)=>FontRun[];width:(text:string,size:number)=>number};
 const W=595.28,H=841.89,M=18*72/25.4,WIDTH=W-2*M,TOP=H-M,PAD=5;
 async function createPdf(){
  const pdf=await PDFDocument.create();pdf.registerFontkit(fontkit);
  const assets=getRuntime()?.ASSETS;
- const bytes=assets?await assets.fetch(new Request('https://assets/fonts/NotoSans-Regular.ttf')).then(async r=>{if(!r.ok)throw Error('PDF font missing');return new Uint8Array(await r.arrayBuffer());}):new Uint8Array(await(await import('node:fs/promises')).readFile('public/fonts/NotoSans-Regular.ttf'));
- return {pdf,font:await pdf.embedFont(bytes,{subset:true})};
+ const load=async(name:string)=>assets?await assets.fetch(new Request('https://assets/fonts/'+name)).then(async r=>{if(!r.ok)throw Error('PDF font missing');return new Uint8Array(await r.arrayBuffer());}):new Uint8Array(await(await import('node:fs/promises')).readFile('public/fonts/'+name));
+ const font=await pdf.embedFont(await load('NotoSans-Regular.ttf'),{subset:true}),mathFont=await pdf.embedFont(await load('NotoSansMath-Regular.ttf'),{subset:true});
+ const supported=new Set(font.getCharacterSet()),mathSupported=new Set(mathFont.getCharacterSet());
+ const runs=(text:string):FontRun[]=>{
+  const result:FontRun[]=[];
+  for(const character of text){const code=character.codePointAt(0)!,chosen=supported.has(code)?font:mathSupported.has(code)?mathFont:null;
+   if(!chosen)throw Object.assign(Error(`PDF: шрифт не поддерживает U+${code.toString(16).toUpperCase()}. Скачайте Word.`),{status:422});
+   const previous=result.at(-1);if(previous?.font===chosen)previous.text+=character;else result.push({text:character,font:chosen});
+  }return result;
+ };
+ const typography:Typography={runs,width:(text,size)=>runs(text).reduce((sum,run)=>sum+run.font.widthOfTextAtSize(run.text,size),0)};
+ return {pdf,typography};
 }
-async function layout(material:ArticleExportMaterial,font:PDFFont){
- const {doc,title,subtitle}=articleExportData(material),blocks=articleToExportBlocks(doc),supported=new Set(font.getCharacterSet());
+async function layout(material:ArticleExportMaterial,typography:Typography){
+ const {doc,title,subtitle}=articleExportData(material),blocks=articleToExportBlocks(doc);
  const pages:Op[][]=[[]];let y=TOP;
  const newPage=()=>{pages.push([]);y=TOP;};
  const ensure=(height:number)=>{if(y-height<M)newPage();};
  const push=(op:Op)=>pages.at(-1)!.push(op);
- const width=(text:string,size:number)=>{for(const c of text)if(!supported.has(c.codePointAt(0)!))throw Object.assign(Error(`PDF: шрифт не поддерживает U+${c.codePointAt(0)!.toString(16).toUpperCase()}. Скачайте Word.`),{status:422});return font.widthOfTextAtSize(text,size);};
+ const width=typography.width;
  // Wrapping does not place pages: paragraphs and table cells share exactly the same metrics.
  const wrap=async(inlines:ExportInline[],size:number,available:number):Promise<Line[]>=>{
   const lines:Line[]=[];let pieces:Piece[]=[],used=0,height=size*1.4;
@@ -96,12 +108,13 @@ async function layout(material:ArticleExportMaterial,font:PDFFont){
   await paragraph(block.inlines,11,depth);
  }}await add(blocks);return {pages};
 }
-export async function layoutNotesArticlePdf(material:ArticleExportMaterial){const {font}=await createPdf();return layout(material,font);}
+export async function layoutNotesArticlePdf(material:ArticleExportMaterial){const {typography}=await createPdf();return layout(material,typography);}
 export async function exportNotesArticlePdf(material:ArticleExportMaterial):Promise<Uint8Array>{
- const {pdf,font}=await createPdf(),result=await layout(material,font);
+ const {pdf,typography}=await createPdf(),result=await layout(material,typography);
  for(const ops of result.pages){const page=pdf.addPage([W,H]);for(const op of ops){
   if(op.kind==='border'){page.drawRectangle({x:op.x,y:op.y,width:op.width,height:op.height,borderWidth:.5,borderColor:rgb(.85,.85,.85),...(op.header?{color:rgb(.93,.95,.96)}:{})});continue;}
   if(op.kind==='image'){page.drawImage(await pdf.embedPng(op.png!),{x:op.x,y:op.y,width:op.width,height:op.height});continue;}
-  const options={x:op.x,y:op.y,size:op.size,font,...(op.italic?{ySkew:degrees(10)}:{})};page.drawText(op.text!,options);if(op.bold)page.drawText(op.text!,{...options,x:op.x+.18});if(op.strike)page.drawLine({start:{x:op.x,y:op.y+op.size!*.3},end:{x:op.x+op.width,y:op.y+op.size!*.3},thickness:.5});
+  let x=op.x;for(const run of typography.runs(op.text!)){const options={x,y:op.y,size:op.size,font:run.font,...(op.italic?{ySkew:degrees(10)}:{})};page.drawText(run.text,options);if(op.bold)page.drawText(run.text,{...options,x:x+.18});x+=run.font.widthOfTextAtSize(run.text,op.size!);}
+  if(op.strike)page.drawLine({start:{x:op.x,y:op.y+op.size!*.3},end:{x:op.x+op.width,y:op.y+op.size!*.3},thickness:.5});
  }}return pdf.save();
 }
